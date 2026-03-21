@@ -1,0 +1,2746 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PhishShield AI — Vernacular Phishing Detection</title>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Sans:wght@300;400;500&display=swap"
+        rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+    <style>
+        :root {
+            --bg: #07090c;
+            --bg2: #0e1117;
+            --bg3: #141920;
+            --bg4: #1a2030;
+            --bg5: #202838;
+            --border: rgba(255, 255, 255, 0.06);
+            --border2: rgba(255, 255, 255, 0.11);
+            --border3: rgba(255, 255, 255, 0.18);
+            --text: #e8ecf2;
+            --text2: #7a8fa8;
+            --text3: #3d4f63;
+            --accent: #00e5b8;
+            --accent-d: rgba(0, 229, 184, 0.1);
+            --red: #ff3f57;
+            --red-d: rgba(255, 63, 87, 0.1);
+            --amber: #ffaa00;
+            --amber-d: rgba(255, 170, 0, 0.1);
+            --blue: #4a9eff;
+            --blue-d: rgba(74, 158, 255, 0.1);
+            --sw: 220px;
+            --fd: 'Syne', sans-serif;
+            --fb: 'DM Sans', sans-serif
+        }
+
+        *,
+        *::before,
+        *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0
+        }
+
+        html {
+            scroll-behavior: smooth
+        }
+
+        body {
+            font-family: var(--fb);
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            display: flex;
+            overflow-x: hidden
+        }
+
+        ::-webkit-scrollbar {
+            width: 3px
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--bg4);
+            border-radius: 9px
+        }
+
+        /* SIDEBAR */
+        #sb {
+            width: var(--sw);
+            flex-shrink: 0;
+            background: var(--bg2);
+            border-right: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 100vh;
+            z-index: 50
+        }
+
+        .sb-logo {
+            padding: 20px 18px 16px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            gap: 10px
+        }
+
+        .sb-logo-icon {
+            width: 34px;
+            height: 34px;
+            border-radius: 9px;
+            background: var(--accent);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0
+        }
+
+        .sb-logo-icon svg {
+            width: 18px;
+            height: 18px
+        }
+
+        .sb-logo-text {
+            font-family: var(--fd);
+            font-size: 17px;
+            font-weight: 800;
+            letter-spacing: -0.3px
+        }
+
+        .sb-logo-text span {
+            color: var(--text2);
+            font-weight: 400
+        }
+
+        .sb-sec {
+            padding: 14px 12px 6px;
+            font-family: var(--fd);
+            font-size: 10px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1.2px;
+            color: var(--text3)
+        }
+
+        .ni {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 9px 12px;
+            margin: 1px 8px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--text2);
+            transition: all 0.15s;
+            border: 1px solid transparent;
+            font-family: var(--fd)
+        }
+
+        .ni:hover {
+            background: var(--bg3);
+            color: var(--text)
+        }
+
+        .ni.active {
+            background: var(--bg4);
+            color: var(--text);
+            border-color: var(--border2)
+        }
+
+        .ni svg {
+            width: 16px;
+            height: 16px;
+            flex-shrink: 0;
+            opacity: 0.7
+        }
+
+        .ni.active svg {
+            opacity: 1
+        }
+
+        .ni .nbadge {
+            margin-left: auto;
+            font-size: 9px;
+            font-weight: 700;
+            padding: 2px 7px;
+            border-radius: 99px;
+            background: var(--red-d);
+            color: var(--red)
+        }
+
+        .sb-bottom {
+            margin-top: auto;
+            padding: 14px 12px;
+            border-top: 1px solid var(--border)
+        }
+
+        .api-btn {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 9px 12px;
+            border-radius: 8px;
+            background: var(--bg3);
+            border: 1px solid var(--border);
+            font-size: 11px;
+            cursor: pointer;
+            transition: border-color 0.15s;
+            width: 100%
+        }
+
+        .api-btn:hover {
+            border-color: var(--border2)
+        }
+
+        .api-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            flex-shrink: 0
+        }
+
+        .api-dot.on {
+            background: var(--accent);
+            animation: pd 2s infinite
+        }
+
+        .api-dot.off {
+            background: var(--text3)
+        }
+
+        .api-txt {
+            flex: 1;
+            color: var(--text2);
+            font-family: var(--fd);
+            font-weight: 600;
+            font-size: 11px
+        }
+
+        /* MAIN */
+        #main {
+            margin-left: var(--sw);
+            flex: 1;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column
+        }
+
+        .topbar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 14px 26px;
+            border-bottom: 1px solid var(--border);
+            background: rgba(7, 9, 12, 0.9);
+            position: sticky;
+            top: 0;
+            z-index: 40;
+            backdrop-filter: blur(12px)
+        }
+
+        .tb-title {
+            font-family: var(--fd);
+            font-size: 18px;
+            font-weight: 700
+        }
+
+        .tb-sub {
+            font-size: 12px;
+            color: var(--text2);
+            margin-top: 2px
+        }
+
+        .tb-pills {
+            display: flex;
+            align-items: center;
+            gap: 8px
+        }
+
+        .lpill {
+            font-size: 10px;
+            padding: 3px 9px;
+            background: var(--bg3);
+            border: 1px solid var(--border);
+            border-radius: 99px;
+            color: var(--text2);
+            font-family: var(--fd)
+        }
+
+        .pc {
+            padding: 22px 26px;
+            flex: 1;
+            overflow-y: auto
+        }
+
+        .page {
+            display: none
+        }
+
+        .page.active {
+            display: block;
+            animation: fi 0.25s ease both
+        }
+
+        @keyframes fi {
+            from {
+                opacity: 0;
+                transform: translateY(8px)
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0)
+            }
+        }
+
+        /* TOAST ALERTS */
+        #toasts {
+            position: fixed;
+            top: 18px;
+            right: 18px;
+            z-index: 200;
+            display: flex;
+            flex-direction: column;
+            gap: 9px;
+            pointer-events: none
+        }
+
+        .toast {
+            pointer-events: all;
+            display: flex;
+            align-items: flex-start;
+            gap: 11px;
+            min-width: 310px;
+            max-width: 400px;
+            padding: 13px 15px;
+            border-radius: 11px;
+            border: 1px solid;
+            backdrop-filter: blur(20px);
+            animation: tsi 0.35s cubic-bezier(.22, 1, .36, 1) both;
+            cursor: pointer
+        }
+
+        .toast.out {
+            animation: tso 0.22s ease forwards
+        }
+
+        @keyframes tsi {
+            from {
+                opacity: 0;
+                transform: translateX(28px)
+            }
+
+            to {
+                opacity: 1;
+                transform: translateX(0)
+            }
+        }
+
+        @keyframes tso {
+            to {
+                opacity: 0;
+                transform: translateX(28px)
+            }
+        }
+
+        .toast.high {
+            background: rgba(18, 5, 7, 0.95);
+            border-color: rgba(255, 63, 87, 0.4)
+        }
+
+        .toast.suspicious {
+            background: rgba(18, 12, 2, 0.95);
+            border-color: rgba(255, 170, 0, 0.35)
+        }
+
+        .toast.safe {
+            background: rgba(2, 16, 13, 0.95);
+            border-color: rgba(0, 229, 184, 0.28)
+        }
+
+        .toast.info {
+            background: rgba(4, 9, 18, 0.95);
+            border-color: rgba(74, 158, 255, 0.28)
+        }
+
+        .t-ico {
+            width: 30px;
+            height: 30px;
+            border-radius: 7px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0
+        }
+
+        .toast.high .t-ico {
+            background: rgba(255, 63, 87, 0.14)
+        }
+
+        .toast.suspicious .t-ico {
+            background: rgba(255, 170, 0, 0.12)
+        }
+
+        .toast.safe .t-ico {
+            background: rgba(0, 229, 184, 0.1)
+        }
+
+        .toast.info .t-ico {
+            background: rgba(74, 158, 255, 0.1)
+        }
+
+        .t-ico svg {
+            width: 15px;
+            height: 15px
+        }
+
+        .toast.high .t-ico svg {
+            color: var(--red)
+        }
+
+        .toast.suspicious .t-ico svg {
+            color: var(--amber)
+        }
+
+        .toast.safe .t-ico svg {
+            color: var(--accent)
+        }
+
+        .toast.info .t-ico svg {
+            color: var(--blue)
+        }
+
+        .t-body {
+            flex: 1
+        }
+
+        .t-title {
+            font-family: var(--fd);
+            font-size: 12px;
+            font-weight: 700;
+            margin-bottom: 2px
+        }
+
+        .toast.high .t-title {
+            color: #ff7888
+        }
+
+        .toast.suspicious .t-title {
+            color: #ffc94d
+        }
+
+        .toast.safe .t-title {
+            color: var(--accent)
+        }
+
+        .toast.info .t-title {
+            color: #7ab8ff
+        }
+
+        .t-msg {
+            font-size: 11px;
+            color: var(--text2);
+            line-height: 1.5
+        }
+
+        .t-x {
+            color: var(--text3);
+            font-size: 15px;
+            cursor: pointer;
+            padding: 1px 3px
+        }
+
+        .t-x:hover {
+            color: var(--text2)
+        }
+
+        /* ALERT BANNER (inline) */
+        .ab {
+            display: flex;
+            align-items: flex-start;
+            gap: 14px;
+            padding: 16px 18px;
+            border-radius: 12px;
+            border: 1px solid;
+            margin-bottom: 18px;
+            animation: fi 0.3s ease both
+        }
+
+        .ab.high {
+            background: rgba(255, 63, 87, 0.06);
+            border-color: rgba(255, 63, 87, 0.28)
+        }
+
+        .ab.suspicious {
+            background: rgba(255, 170, 0, 0.05);
+            border-color: rgba(255, 170, 0, 0.25)
+        }
+
+        .ab.safe {
+            background: rgba(0, 229, 184, 0.05);
+            border-color: rgba(0, 229, 184, 0.2)
+        }
+
+        .ab-ico {
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0
+        }
+
+        .ab.high .ab-ico {
+            background: rgba(255, 63, 87, 0.13)
+        }
+
+        .ab.suspicious .ab-ico {
+            background: rgba(255, 170, 0, 0.11)
+        }
+
+        .ab.safe .ab-ico {
+            background: rgba(0, 229, 184, 0.09)
+        }
+
+        .ab-ico svg {
+            width: 20px;
+            height: 20px
+        }
+
+        .ab.high .ab-ico svg {
+            color: var(--red)
+        }
+
+        .ab.suspicious .ab-ico svg {
+            color: var(--amber)
+        }
+
+        .ab.safe .ab-ico svg {
+            color: var(--accent)
+        }
+
+        .ab-lvl {
+            font-family: var(--fd);
+            font-size: 20px;
+            font-weight: 800
+        }
+
+        .ab.high .ab-lvl {
+            color: var(--red)
+        }
+
+        .ab.suspicious .ab-lvl {
+            color: var(--amber)
+        }
+
+        .ab.safe .ab-lvl {
+            color: var(--accent)
+        }
+
+        .ab-sub {
+            font-size: 13px;
+            color: var(--text2);
+            margin-top: 3px;
+            line-height: 1.6
+        }
+
+        .ab-num {
+            font-family: var(--fd);
+            font-size: 38px;
+            font-weight: 800
+        }
+
+        .ab.high .ab-num {
+            color: var(--red)
+        }
+
+        .ab.suspicious .ab-num {
+            color: var(--amber)
+        }
+
+        .ab.safe .ab-num {
+            color: var(--accent)
+        }
+
+        .ab-numlbl {
+            font-size: 10px;
+            color: var(--text3);
+            font-family: var(--fd);
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px
+        }
+
+        /* DASHBOARD */
+        .stat-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 12px;
+            margin-bottom: 20px
+        }
+
+        .sc {
+            background: var(--bg2);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 18px;
+            transition: border-color 0.2s
+        }
+
+        .sc:hover {
+            border-color: var(--border2)
+        }
+
+        .sc-icon {
+            width: 36px;
+            height: 36px;
+            border-radius: 9px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 12px
+        }
+
+        .sc-icon svg {
+            width: 17px;
+            height: 17px
+        }
+
+        .sc-val {
+            font-family: var(--fd);
+            font-size: 30px;
+            font-weight: 800;
+            line-height: 1
+        }
+
+        .sc-lbl {
+            font-size: 12px;
+            color: var(--text2);
+            margin-top: 5px;
+            font-family: var(--fd);
+            font-weight: 500
+        }
+
+        .sc-d {
+            font-size: 11px;
+            margin-top: 5px;
+            font-family: var(--fd);
+            font-weight: 600
+        }
+
+        .dash-charts {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+            margin-bottom: 18px
+        }
+
+        .cc {
+            background: var(--bg2);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 20px
+        }
+
+        .cc.wide {
+            grid-column: 1/-1
+        }
+
+        .cc h4 {
+            font-family: var(--fd);
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--text3);
+            margin-bottom: 14px
+        }
+
+        .cl {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-top: 10px;
+            font-size: 11px;
+            color: var(--text2)
+        }
+
+        .cl span {
+            display: flex;
+            align-items: center;
+            gap: 5px
+        }
+
+        .cs {
+            width: 8px;
+            height: 8px;
+            border-radius: 2px;
+            display: inline-block
+        }
+
+        .act-feed {
+            display: flex;
+            flex-direction: column
+        }
+
+        .ai {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            padding: 11px 14px;
+            border-bottom: 1px solid var(--border);
+            transition: background 0.15s
+        }
+
+        .ai:first-child {
+            border-top: 1px solid var(--border)
+        }
+
+        .ai:hover {
+            background: var(--bg3)
+        }
+
+        .a-dot {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            flex-shrink: 0;
+            margin-top: 5px
+        }
+
+        .a-dot.high {
+            background: var(--red);
+            box-shadow: 0 0 5px rgba(255, 63, 87, 0.5)
+        }
+
+        .a-dot.suspicious {
+            background: var(--amber)
+        }
+
+        .a-dot.safe {
+            background: var(--accent)
+        }
+
+        .a-txt {
+            flex: 1;
+            font-size: 13px;
+            line-height: 1.5;
+            color: var(--text2)
+        }
+
+        .a-time {
+            font-size: 11px;
+            color: var(--text3);
+            flex-shrink: 0;
+            font-family: var(--fd)
+        }
+
+        .sh {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 12px
+        }
+
+        .sh h3 {
+            font-family: var(--fd);
+            font-size: 14px;
+            font-weight: 700
+        }
+
+        .sh .ss {
+            font-size: 12px;
+            color: var(--text2)
+        }
+        
+        .clear-alerts-btn {
+            background: var(--red-d);
+            color: var(--red);
+            border: 1px solid var(--red);
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 600;
+            font-family: var(--fd);
+            cursor: pointer;
+            transition: all 0.15s;
+            white-space: nowrap;
+        }
+        
+        .clear-alerts-btn:hover {
+            background: var(--red);
+            color: #fff;
+            transform: translateY(-1px);
+        }
+
+        /* ANALYSIS */
+        .al {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px
+        }
+
+        .ic {
+            background: var(--bg2);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 20px
+        }
+
+        .ic-t {
+            font-family: var(--fd);
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--text3);
+            margin-bottom: 13px
+        }
+
+        textarea.mta {
+            width: 100%;
+            min-height: 155px;
+            resize: vertical;
+            background: var(--bg3);
+            border: 1px solid var(--border2);
+            border-radius: 8px;
+            padding: 13px;
+            font-family: var(--fb);
+            font-size: 14px;
+            color: var(--text);
+            line-height: 1.7;
+            transition: border-color 0.2s
+        }
+
+        textarea.mta:focus {
+            outline: none;
+            border-color: var(--accent)
+        }
+
+        textarea.mta::placeholder {
+            color: var(--text3)
+        }
+
+        select.ls {
+            width: 100%;
+            margin-top: 9px;
+            background: var(--bg3);
+            border: 1px solid var(--border2);
+            border-radius: 8px;
+            padding: 9px 13px;
+            font-family: var(--fb);
+            font-size: 13px;
+            color: var(--text);
+            appearance: none;
+            cursor: pointer;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 10 10'%3E%3Cpath fill='%237a8fa8' d='M5 7L0 2h10z'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 12px center
+        }
+
+        select.ls:focus {
+            outline: none;
+            border-color: var(--accent)
+        }
+
+        .abn {
+            width: 100%;
+            margin-top: 11px;
+            padding: 12px;
+            font-family: var(--fd);
+            font-size: 14px;
+            font-weight: 700;
+            background: var(--accent);
+            color: #000;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s
+        }
+
+        .abn:hover {
+            background: #00cfac;
+            transform: translateY(-1px)
+        }
+
+        .abn:disabled {
+            opacity: 0.3;
+            cursor: not-allowed;
+            transform: none
+        }
+
+        .uz {
+            border: 2px dashed var(--border2);
+            border-radius: 10px;
+            padding: 30px 18px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s;
+            position: relative;
+            background: var(--bg3)
+        }
+
+        .uz:hover,
+        .uz.dov {
+            border-color: var(--accent);
+            background: rgba(0, 229, 184, 0.03)
+        }
+
+        .uz input {
+            position: absolute;
+            inset: 0;
+            opacity: 0;
+            cursor: pointer;
+            width: 100%;
+            height: 100%
+        }
+
+        .uz-icon {
+            width: 44px;
+            height: 44px;
+            margin: 0 auto 11px;
+            background: var(--bg4);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center
+        }
+
+        .uz-icon svg {
+            width: 19px;
+            height: 19px;
+            color: var(--accent)
+        }
+
+        .uz h3 {
+            font-family: var(--fd);
+            font-size: 14px;
+            font-weight: 700;
+            margin-bottom: 4px
+        }
+
+        .uz p {
+            font-size: 12px;
+            color: var(--text2)
+        }
+
+        .uz .fmt {
+            font-size: 11px;
+            color: var(--text3);
+            margin-top: 5px
+        }
+
+        .fl {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            margin-top: 11px
+        }
+
+        .fi {
+            display: flex;
+            align-items: center;
+            gap: 9px;
+            background: var(--bg3);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 8px 11px;
+            animation: fi 0.2s ease both
+        }
+
+        .fi-ico {
+            width: 28px;
+            height: 28px;
+            border-radius: 6px;
+            background: rgba(0, 229, 184, 0.09);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0
+        }
+
+        .fi-ico svg {
+            width: 13px;
+            height: 13px;
+            color: var(--accent)
+        }
+
+        .fi-n {
+            flex: 1;
+            font-size: 13px;
+            font-weight: 500;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis
+        }
+
+        .fi-s {
+            font-size: 11px;
+            color: var(--text2)
+        }
+
+        .fi-r {
+            width: 21px;
+            height: 21px;
+            border-radius: 50%;
+            border: none;
+            background: var(--bg4);
+            color: var(--text3);
+            cursor: pointer;
+            font-size: 13px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.15s
+        }
+
+        .fi-r:hover {
+            background: var(--red-d);
+            color: var(--red)
+        }
+
+        /* RESULTS */
+        .rs {
+            animation: fi 0.3s ease both;
+            margin-top: 14px
+        }
+
+        .sbw {
+            height: 5px;
+            background: var(--bg4);
+            border-radius: 99px;
+            overflow: hidden;
+            margin-top: 6px
+        }
+
+        .sbf {
+            height: 100%;
+            border-radius: 99px;
+            transition: width 1s cubic-bezier(.22, 1, .36, 1)
+        }
+
+        .mr {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 8px;
+            margin-bottom: 14px
+        }
+
+        .mm {
+            background: var(--bg3);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 11px 13px
+        }
+
+        .mm-l {
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--text3);
+            font-family: var(--fd);
+            font-weight: 700;
+            margin-bottom: 4px
+        }
+
+        .mm-v {
+            font-family: var(--fd);
+            font-size: 22px;
+            font-weight: 800
+        }
+
+        .flist {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+            margin-bottom: 14px
+        }
+
+        .fitem {
+            display: flex;
+            gap: 9px;
+            padding: 10px 12px;
+            background: var(--bg3);
+            border: 1px solid var(--border);
+            border-radius: 8px
+        }
+
+        .fdot {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            flex-shrink: 0;
+            margin-top: 5px
+        }
+
+        .fdot.high {
+            background: var(--red);
+            box-shadow: 0 0 4px rgba(255, 63, 87, 0.5)
+        }
+
+        .fdot.medium {
+            background: var(--amber)
+        }
+
+        .fdot.low {
+            background: var(--accent)
+        }
+
+        .ftag {
+            display: inline-block;
+            margin-top: 3px;
+            font-size: 10px;
+            font-weight: 700;
+            font-family: var(--fd);
+            text-transform: uppercase;
+            letter-spacing: 0.4px;
+            padding: 2px 7px;
+            border-radius: 99px
+        }
+
+        .ftag.high {
+            background: rgba(255, 63, 87, 0.12);
+            color: #ff7888
+        }
+
+        .ftag.medium {
+            background: rgba(255, 170, 0, 0.12);
+            color: #ffc94d
+        }
+
+        .ftag.low {
+            background: rgba(0, 229, 184, 0.09);
+            color: var(--accent)
+        }
+
+        .hmsg {
+            font-size: 14px;
+            line-height: 2;
+            padding: 13px 15px;
+            background: var(--bg3);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            margin-bottom: 14px
+        }
+
+        .hl-red {
+            background: rgba(255, 63, 87, 0.2);
+            color: #ff8a97;
+            padding: 2px 4px;
+            border-radius: 3px
+        }
+
+        .hl-amber {
+            background: rgba(255, 170, 0, 0.17);
+            color: #ffd166;
+            padding: 2px 4px;
+            border-radius: 3px
+        }
+
+        .tlist {
+            display: flex;
+            flex-direction: column;
+            gap: 7px;
+            margin-bottom: 14px
+        }
+
+        .trow {
+            display: flex;
+            align-items: center;
+            gap: 9px
+        }
+
+        .tn {
+            font-size: 11px;
+            color: var(--text2);
+            min-width: 88px;
+            font-family: var(--fd);
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.3px
+        }
+
+        .tt {
+            flex: 1;
+            height: 4px;
+            background: var(--bg4);
+            border-radius: 99px;
+            overflow: hidden
+        }
+
+        .tf {
+            height: 100%;
+            border-radius: 99px;
+            transition: width 1s cubic-bezier(.22, 1, .36, 1)
+        }
+
+        .tp {
+            font-size: 11px;
+            color: var(--text2);
+            min-width: 30px;
+            text-align: right;
+            font-family: var(--fd)
+        }
+
+        .lnk {
+            display: flex;
+            align-items: center;
+            gap: 7px;
+            padding: 8px 11px;
+            border-radius: 8px;
+            margin-bottom: 5px;
+            font-size: 12px;
+            border: 1px solid rgba(255, 63, 87, 0.22);
+            background: rgba(255, 63, 87, 0.05);
+            color: #ff8a97;
+            word-break: break-all
+        }
+
+        .rec {
+            padding: 12px 14px;
+            background: var(--blue-d);
+            border: 1px solid rgba(74, 158, 255, 0.18);
+            border-radius: 8px;
+            font-size: 13px;
+            color: #93bbfd;
+            line-height: 1.6;
+            margin-bottom: 14px
+        }
+
+        .rec strong {
+            color: #7ab8ff;
+            font-weight: 600
+        }
+
+        .lbox {
+            display: flex;
+            align-items: center;
+            gap: 11px;
+            padding: 18px;
+            color: var(--text2);
+            font-size: 13px;
+            background: var(--bg2);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            margin-top: 11px
+        }
+
+        .sp {
+            width: 17px;
+            height: 17px;
+            border-radius: 50%;
+            border: 2px solid var(--border2);
+            border-top-color: var(--accent);
+            animation: spin 0.7s linear infinite;
+            flex-shrink: 0
+        }
+
+        .tc {
+            font-size: 13px;
+            line-height: 1.8;
+            background: var(--bg3);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 11px 13px;
+            margin-bottom: 11px;
+            max-height: 130px;
+            overflow-y: auto;
+            color: var(--text2)
+        }
+
+        .tc strong {
+            color: var(--text)
+        }
+
+        .fr {
+            background: var(--bg3);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 9px
+        }
+
+        .frh {
+            display: flex;
+            align-items: center;
+            gap: 9px;
+            margin-bottom: 10px
+        }
+
+        .frn {
+            font-family: var(--fd);
+            font-size: 13px;
+            font-weight: 700;
+            flex: 1
+        }
+
+        .rp {
+            font-size: 9px;
+            font-weight: 700;
+            font-family: var(--fd);
+            padding: 3px 8px;
+            border-radius: 99px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px
+        }
+
+        .rp.safe {
+            background: rgba(0, 229, 184, 0.11);
+            color: var(--accent)
+        }
+
+        .rp.suspicious {
+            background: rgba(255, 170, 0, 0.11);
+            color: var(--amber)
+        }
+
+        .rp.high {
+            background: rgba(255, 63, 87, 0.11);
+            color: var(--red)
+        }
+
+        .rt-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 9px 12px;
+            background: var(--bg3);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            margin-bottom: 11px
+        }
+
+        .rt-lbl {
+            flex: 1;
+            font-size: 13px;
+            color: var(--text2)
+        }
+
+        .rt-badge {
+            font-size: 9px;
+            padding: 2px 7px;
+            border-radius: 99px;
+            background: rgba(0, 229, 184, 0.08);
+            color: var(--accent);
+            font-family: var(--fd);
+            font-weight: 700;
+            text-transform: uppercase
+        }
+
+        .tw {
+            position: relative;
+            width: 35px;
+            height: 20px
+        }
+
+        .tw input {
+            opacity: 0;
+            width: 0;
+            height: 0
+        }
+
+        .tt2 {
+            position: absolute;
+            cursor: pointer;
+            inset: 0;
+            background: var(--bg4);
+            border-radius: 99px;
+            border: 1px solid var(--border2);
+            transition: 0.25s
+        }
+
+        .tt2::before {
+            content: '';
+            position: absolute;
+            width: 12px;
+            height: 12px;
+            left: 3px;
+            top: 3px;
+            background: var(--text2);
+            border-radius: 50%;
+            transition: 0.25s
+        }
+
+        input:checked+.tt2 {
+            background: rgba(0, 229, 184, 0.16);
+            border-color: var(--accent)
+        }
+
+        input:checked+.tt2::before {
+            transform: translateX(15px);
+            background: var(--accent)
+        }
+
+        /* MODAL */
+        #km {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.82);
+            z-index: 300;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            backdrop-filter: blur(5px)
+        }
+
+        .mb {
+            background: var(--bg2);
+            border: 1px solid var(--border2);
+            border-radius: 16px;
+            padding: 28px;
+            max-width: 390px;
+            width: 100%;
+            animation: fi 0.3s ease both
+        }
+
+        .ml {
+            display: flex;
+            align-items: center;
+            gap: 11px;
+            margin-bottom: 18px
+        }
+
+        .ml-ico {
+            width: 38px;
+            height: 38px;
+            background: rgba(0, 229, 184, 0.11);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center
+        }
+
+        .ml-ico svg {
+            width: 19px;
+            height: 19px;
+            color: var(--accent)
+        }
+
+        .ml-t {
+            font-family: var(--fd);
+            font-size: 15px;
+            font-weight: 800
+        }
+
+        .ml-s {
+            font-size: 12px;
+            color: var(--text2);
+            margin-top: 2px
+        }
+
+        .mi {
+            width: 100%;
+            background: var(--bg3);
+            border: 1px solid var(--border2);
+            border-radius: 8px;
+            padding: 11px 13px;
+            font-family: var(--fb);
+            font-size: 14px;
+            color: var(--text);
+            margin-bottom: 9px
+        }
+
+        .mi:focus {
+            outline: none;
+            border-color: var(--accent)
+        }
+
+        .mh {
+            font-size: 12px;
+            color: var(--text3);
+            margin-bottom: 14px;
+            line-height: 1.6
+        }
+
+        .mh a {
+            color: var(--accent);
+            text-decoration: none
+        }
+
+        .mbtn {
+            width: 100%;
+            padding: 12px;
+            background: var(--accent);
+            color: #000;
+            border: none;
+            border-radius: 8px;
+            font-family: var(--fd);
+            font-size: 14px;
+            font-weight: 800;
+            cursor: pointer;
+            transition: opacity 0.2s
+        }
+
+        .mbtn:hover {
+            opacity: 0.85
+        }
+
+        /* ANIMATIONS */
+        @keyframes pd {
+
+            0%,
+            100% {
+                opacity: 1
+            }
+
+            50% {
+                opacity: 0.4
+            }
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg)
+            }
+        }
+
+        /* RESPONSIVE */
+        @media(max-width:900px) {
+            #sb {
+                width: 58px
+            }
+
+            .sb-logo-text,
+            .sb-sec,
+            .ni span,
+            .api-txt {
+                display: none
+            }
+
+            .ni {
+                justify-content: center;
+                padding: 10px;
+                margin: 2px 5px
+            }
+
+            .ni svg {
+                opacity: 1
+            }
+
+            .api-btn {
+                justify-content: center;
+                padding: 9px 10px
+            }
+
+            #main {
+                margin-left: 58px
+            }
+
+            .stat-grid,
+            .dash-charts,
+            .al {
+                grid-template-columns: 1fr 1fr
+            }
+
+            .mr {
+                grid-template-columns: 1fr 1fr
+            }
+        }
+
+        @media(max-width:600px) {
+            .stat-grid {
+                grid-template-columns: 1fr 1fr
+            }
+
+            .al {
+                grid-template-columns: 1fr
+            }
+
+            .tb-pills {
+                display: none
+            }
+        }
+
+        @keyframes slideIn {
+  from { transform: translateX(100%); opacity: 0; }
+  to   { transform: translateX(0);    opacity: 1; }
+}
+
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+
+<body>
+
+    <!-- API KEY MODAL -->
+    <div id="km" style="display:none;align-items:center;justify-content:center">
+        <div class="mb">
+            <div class="ml">
+                <div class="ml-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+                    </svg></div>
+                <div>
+                    <div class="ml-t">PhishShield AI</div>
+            <div class="ml-s">Enter your Grok/xAI API key to activate</div>
+                </div>
+            </div>
+            <input type="password" class="mi" id="apiIn" placeholder="sk-ant-api03-...">
+            <p class="mh">Stored only in your browser. Get a key at <a href="https://console.x.ai" target="_blank">console.x.ai</a></p>
+            <button class="mbtn" onclick="saveKey()">Activate PhishShield →</button>
+        </div>
+    </div>
+
+    <!-- TOAST CONTAINER -->
+    <div id="toasts"></div>
+
+    <!-- SIDEBAR -->
+    <div id="sb">
+        <div class="sb-logo">
+            <div class="sb-logo-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="#000" stroke-width="2.2">
+                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+                    <path d="M9 12l2 2 4-4" stroke-linecap="round" stroke-linejoin="round" />
+                </svg>
+            </div>
+            <div class="sb-logo-text">PhishShield <span>AI</span></div>
+        </div>
+<div class="sb-sec">Navigation</div>
+        <div class="ni active" onclick="goTo('dashboard',this)">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                <rect x="3" y="3" width="7" height="9" rx="1.5" />
+                <rect x="14" y="3" width="7" height="5" rx="1.5" />
+                <rect x="14" y="12" width="7" height="9" rx="1.5" />
+                <rect x="3" y="16" width="7" height="5" rx="1.5" />
+            </svg>
+            <span>Dashboard</span>
+        </div>
+        <div class="ni" onclick="goTo('text',this)">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z" />
+            </svg>
+            <span>Text Analysis</span>
+        </div>
+
+        <div class="ni" onclick="goTo('audio',this)">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                <path d="M12 1a3 3 0 00-3 3v8a3 3 0 006 0V4a3 3 0 00-3-3z" />
+                <path d="M19 10v2a7 7 0 01-14 0v-2M12 19v4M8 23h8" />
+            </svg>
+            <span>Audio Analysis</span>
+        </div>
+        <div class="ni" onclick="goTo('alerts',this)">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                <path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 01-3.46 0" />
+            </svg>
+            <span>Alert Log</span>
+            <span class="nbadge" id="aBadge" style="display:none">0</span>
+        </div>
+
+        <div class="ni" onclick="goTo('about',this)">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                <circle cx="12" cy="12" r="10"/>
+                <line x1="15" y1="9" x2="9" y2="9"/>
+                <line x1="9" y1="15" x2="15" y2="15"/>
+            </svg>
+            <span>About Us</span>
+        </div>
+        <div class="sb-bottom">
+    <button class="api-btn" onclick="changeKey()">
+        <div class="api-dot off" id="aDot"></div>
+        <div class="api-txt" id="aTxt">No API key</div>
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--text3)">
+            <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7" />
+            <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" />
+        </svg>
+    </button>
+    <button class="api-btn" onclick="logout()" style="margin-top:8px;border-color:rgba(255,63,87,0.3)">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--red)" stroke-width="2">
+            <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9"/>
+        </svg>
+        <div class="api-txt" style="color:var(--red)">Logout</div>
+    </button>
+</div>
+    </div>
+
+    <!-- MAIN CONTENT -->
+    <div id="main">
+        <div class="topbar">
+            <div style="display:flex;align-items:center;gap:16px;flex:1">
+                <div>
+                    <div class="tb-title" id="tbT">Dashboard</div>
+                    <div class="tb-sub" id="tbS">Overview · AI phishing detection across Indian languages</div>
+                </div>
+                
+            </div>
+            <div style="display:flex;align-items:center;gap:12px">
+  <div class="tb-pills">
+    <span class="lpill">हिन्दी</span>
+    <span class="lpill">मराठी</span>
+    <span class="lpill">தமிழ்</span>
+    <span class="lpill">বাংলা</span>
+    <span class="lpill">తెలుగు</span>
+  </div>
+  <!-- USER PROFILE -->
+  <div id="userProfile" style="display:flex;align-items:center;gap:8px;padding:5px 12px;background:var(--bg3);border:1px solid var(--border2);border-radius:99px;cursor:pointer" onclick="openProfile()">
+    <div id="userAvatar" style="width:24px;height:24px;border-radius:50%;background:var(--accent);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#000;font-family:var(--fd)">?</div>
+    <div id="userName" style="font-size:12px;font-weight:600;font-family:var(--fd);color:var(--text2);max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">Loading...</div>
+  </div>
+</div>
+        </div>
+
+        <div class="pc">
+
+            <!-- ════ DASHBOARD PAGE ════ -->
+            <div id="p-dashboard" class="page active">
+
+                <!-- WELCOME BANNER -->
+                <div style="margin-bottom:20px">
+                    <div style="font-family:var(--fd);font-size:24px;font-weight:800">
+                        Hello, <span id="welcomeName" style="color:var(--accent)">there</span> 👋
+                    </div>
+                <div style="font-size:13px;color:var(--text2);margin-top:4px">
+                    Welcome back to PhishShield AI — your scam detection dashboard
+            </div>
+        </div>
+
+                <div class="stat-grid">
+                    <div class="sc">
+                        <div class="sc-icon" style="background:var(--blue-d)"><svg viewBox="0 0 24 24" fill="none"
+                                stroke="var(--blue)" stroke-width="2">
+                                <circle cx="11" cy="11" r="8" />
+                                <path d="M21 21l-4.35-4.35" />
+                            </svg></div>
+                        <div class="sc-val" id="dTotal">0</div>
+                        <div class="sc-lbl">Total Scans</div>
+                        <div class="sc-d" style="color:var(--text3)" id="dTotalD">Run your first analysis</div>
+                    </div>
+
+                    <div class="sc">
+                        <div class="sc-icon" style="background:var(--red-d)"><svg viewBox="0 0 24 24" fill="none"
+                                stroke="var(--red)" stroke-width="2">
+                                <path
+                                    d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0zM12 9v5M12 17h.01" />
+                            </svg></div>
+                        <div class="sc-val" id="dHigh" style="color:var(--red)">0</div>
+                        <div class="sc-lbl">High Risk</div>
+                        <div class="sc-d" style="color:var(--red)" id="dHighD">—</div>
+                    </div>
+                    <div class="sc">
+                        <div class="sc-icon" style="background:var(--amber-d)"><svg viewBox="0 0 24 24" fill="none"
+                                stroke="var(--amber)" stroke-width="2">
+                                <circle cx="12" cy="12" r="10" />
+                                <line x1="12" y1="8" x2="12" y2="12" />
+                                <line x1="12" y1="16" x2="12.01" y2="16" />
+                            </svg></div>
+                        <div class="sc-val" id="dSusp" style="color:var(--amber)">0</div>
+                        <div class="sc-lbl">Suspicious</div>
+                        <div class="sc-d" style="color:var(--amber)" id="dSuspD">—</div>
+                    </div>
+                    <div class="sc">
+                        <div class="sc-icon" style="background:var(--accent-d)"><svg viewBox="0 0 24 24" fill="none"
+                                stroke="var(--accent)" stroke-width="2">
+                                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+                                <path d="M9 12l2 2 4-4" />
+                            </svg></div>
+                        <div class="sc-val" id="dSafe" style="color:var(--accent)">0</div>
+                        <div class="sc-lbl">Safe</div>
+                        <div class="sc-d" style="color:var(--accent)" id="dSafeD">—</div>
+                    </div>
+                </div>
+
+                <!-- CTA empty state -->
+                <div id="dCTA"
+                    style="text-align:center;padding:44px 20px;background:var(--bg2);border:1px solid var(--border);border-radius:14px;margin-bottom:20px">
+                    <div
+                        style="width:54px;height:54px;background:var(--bg3);border-radius:50%;margin:0 auto 16px;display:flex;align-items:center;justify-content:center">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--text3)"
+                            stroke-width="1.8">
+                            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+                        </svg>
+                    </div>
+                    <div style="font-family:var(--fd);font-size:20px;font-weight:700;margin-bottom:10px">No scans yet
+                    </div>
+                    <div
+                        style="font-size:14px;color:var(--text2);margin-bottom:22px;max-width:400px;margin-left:auto;margin-right:auto;line-height:1.6">
+                        Start by analyzing a suspicious text message or uploading a call recording</div>
+                    <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
+                        <button onclick="goTo('text', this)"
+                            style="padding:11px 24px;background:var(--accent);color:#000;border:none;border-radius:8px;font-family:var(--fd);font-size:13px;font-weight:700;cursor:pointer;transition:opacity 0.2s"
+                            onmouseover="this.style.opacity=0.85" onmouseout="this.style.opacity=1">Analyze Text
+                            →</button>
+                        <button onclick="goTo('audio',document.querySelectorAll('.ni')[2])"
+                            style="padding:11px 24px;background:var(--bg3);color:var(--text);border:1px solid var(--border2);border-radius:8px;font-family:var(--fd);font-size:13px;font-weight:700;cursor:pointer">Analyze
+                            Audio →</button>
+                    </div>
+                </div>
+
+                <!-- Dashboard charts (hidden until first scan) -->
+                <div id="dCharts" style="display:none">
+                    <!-- Latest scan alert banner -->
+                    <div id="dBanner"></div>
+
+                    <div class="dash-charts">
+                        <div class="cc">
+                            <h4>Risk distribution</h4>
+                            <div style="position:relative;width:100%;height:190px"><canvas id="cDonut"></canvas></div>
+                            <div class="cl"><span><span class="cs" style="background:var(--red)"></span>High
+                                    Risk</span><span><span class="cs"
+                                        style="background:var(--amber)"></span>Suspicious</span><span><span class="cs"
+                                        style="background:var(--accent)"></span>Safe</span></div>
+                        </div>
+                        <div class="cc">
+                            <h4>Manipulation tactics (latest scan)</h4>
+                            <div style="position:relative;width:100%;height:190px"><canvas id="cRadar"></canvas></div>
+                        </div>
+                        <div class="cc wide">
+                            <h4>Scam probability — scan history</h4>
+                            <div style="position:relative;width:100%;height:140px"><canvas id="cLine"></canvas></div>
+                        </div>
+                    </div>
+
+                    <div class="sh">
+                        <h3>Recent activity</h3><span class="ss" id="actCnt"></span>
+                    </div>
+                    <div class="act-feed" id="actFeed"></div>
+                </div>
+            </div>
+
+            <!-- ════ TEXT ANALYSIS PAGE ════ -->
+            <div id="p-text" class="page">
+                <div class="al">
+                    <div>
+                        <div class="ic">
+                            <div class="ic-t">Paste suspicious message</div>
+                            <textarea class="mta" id="tIn"
+                                placeholder="यहाँ संदेश पेस्ट करें…&#10;&#10;उदाहरण: आपका SBI खाता 24 घंटे में बंद होगा। OTP share करें: 1800-XXX-000&#10;&#10;Or paste in Tamil, Bengali, Marathi, Telugu, Punjabi…"></textarea>
+                            <select class="ls" id="tLang">
+                                <option value="auto">Auto-detect language</option>
+                                <option value="hi">Hindi (हिन्दी)</option>
+                                <option value="mr">Marathi (मराठी)</option>
+                                <option value="ta">Tamil (தமிழ்)</option>
+                                <option value="bn">Bengali (বাংলা)</option>
+                                <option value="te">Telugu (తెలుగు)</option>
+                                <option value="pa">Punjabi (ਪੰਜਾਬੀ)</option>
+                                <option value="en">English</option>
+                            </select>
+                            <button class="abn" onclick="doText()">Analyze Message →</button>
+                        </div>
+                        <div id="tRes"></div>
+                    </div>
+                    <div>
+                        <div class="ic" style="margin-bottom:14px">
+                            <div class="ic-t">How it works</div>
+                            <div
+                                style="font-size:13px;color:var(--text2);line-height:1.85;display:flex;flex-direction:column;gap:9px">
+                                <div style="display:flex;gap:10px"><span
+                                        style="color:var(--accent);font-family:var(--fd);font-weight:700;min-width:22px">01</span>Paste
+                                    any message in Hindi, Marathi, Tamil, Bengali, Telugu, Punjabi or English</div>
+                                <div style="display:flex;gap:10px"><span
+                                        style="color:var(--accent);font-family:var(--fd);font-weight:700;min-width:22px">02</span>AI
+                                    detects OTP requests, urgency triggers, authority impersonation &amp; fake links
+                                </div>
+                                <div style="display:flex;gap:10px"><span
+                                        style="color:var(--accent);font-family:var(--fd);font-weight:700;min-width:22px">03</span>Suspicious
+                                    phrases highlighted in red/amber directly in the message</div>
+                                <div style="display:flex;gap:10px"><span
+                                        style="color:var(--accent);font-family:var(--fd);font-weight:700;min-width:22px">04</span>Dashboard
+                                    &amp; Alert Log update instantly. Alerts fire for every High Risk scan</div>
+                            </div>
+                        </div>
+                        <div class="ic">
+                            <div class="ic-t">Try a sample message</div>
+                            <div style="display:flex;flex-direction:column;gap:7px">
+                                <button onclick="loadS('hi')"
+                                    style="text-align:left;padding:10px 12px;background:var(--bg3);border:1px solid var(--border);border-radius:8px;color:var(--text2);font-size:12px;cursor:pointer;transition:all 0.15s;font-family:var(--fb)"
+                                    onmouseover="this.style.borderColor='var(--border2)';this.style.color='var(--text)'"
+                                    onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--text2)'">🇮🇳
+                                    Hindi — SBI OTP scam SMS</button>
+                                <button onclick="loadS('ta')"
+                                    style="text-align:left;padding:10px 12px;background:var(--bg3);border:1px solid var(--border);border-radius:8px;color:var(--text2);font-size:12px;cursor:pointer;transition:all 0.15s;font-family:var(--fb)"
+                                    onmouseover="this.style.borderColor='var(--border2)';this.style.color='var(--text)'"
+                                    onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--text2)'">🏴
+                                    Tamil — TRAI SIM block threat</button>
+                                <button onclick="loadS('mr')"
+                                    style="text-align:left;padding:10px 12px;background:var(--bg3);border:1px solid var(--border);border-radius:8px;color:var(--text2);font-size:12px;cursor:pointer;transition:all 0.15s;font-family:var(--fb)"
+                                    onmouseover="this.style.borderColor='var(--border2)';this.style.color='var(--text)'"
+                                    onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--text2)'">🇮🇳
+                                    Marathi — Bank fraud warning</button>
+                                <button onclick="loadS('en')"
+                                    style="text-align:left;padding:10px 12px;background:var(--bg3);border:1px solid var(--border);border-radius:8px;color:var(--text2);font-size:12px;cursor:pointer;transition:all 0.15s;font-family:var(--fb)"
+                                    onmouseover="this.style.borderColor='var(--border2)';this.style.color='var(--text)'"
+                                    onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--text2)'">🎁
+                                    English — KBC prize scam</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ════ AUDIO ANALYSIS PAGE ════ -->
+            <div id="p-audio" class="page">
+                <div class="al">
+                    <div>
+                        <div class="rt-row">
+                            <div class="rt-lbl">Real-time analysis <span style="color:var(--text3);font-size:11px">(live
+                                    call detection)</span></div>
+                            <span class="rt-badge">Beta</span>
+                            <div class="tw"><input type="checkbox" id="rtT">
+                                <div class="tt2"></div>
+                            </div>
+                        </div>
+                        <div class="ic">
+                            <div class="ic-t">Upload call recordings</div>
+                            <div class="uz" id="dz">
+                                <input type="file" id="aIn" accept=".mp3,.wav,.ogg,.m4a,.aac,.webm" multiple
+                                    onchange="handleF(event)">
+                                <div class="uz-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                        stroke-width="1.8">
+                                        <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12"
+                                            stroke-linecap="round" stroke-linejoin="round" />
+                                    </svg></div>
+                                <h3>Drop audio files here</h3>
+                                <p>or click to browse</p>
+                                <p class="fmt">MP3 · WAV · OGG · M4A · Multiple files at once</p>
+                            </div>
+                            <div class="fl" id="fList"></div>
+                            <select class="ls" id="aLang" style="margin-top:11px">
+                                <option value="auto">Auto-detect language</option>
+                                <option value="hi">Hindi (हिन्दी)</option>
+                                <option value="mr">Marathi (मराठी)</option>
+                                <option value="ta">Tamil (தமிழ்)</option>
+                                <option value="bn">Bengali (বাংলা)</option>
+                                <option value="te">Telugu (తెలుగు)</option>
+                                <option value="en">English</option>
+                            </select>
+                            <button class="abn" id="aBtn" onclick="doAudio()" disabled>Analyze Audio Files →</button>
+                        </div>
+                        <div id="aRes"></div>
+                    </div>
+                    <div class="ic" style="align-self:start">
+                        <div class="ic-t">Audio analysis pipeline</div>
+                        <div style="display:flex;flex-direction:column;gap:14px;font-size:13px">
+                            <div style="display:flex;gap:11px;align-items:flex-start">
+                                <div
+                                    style="width:32px;height:32px;border-radius:8px;background:rgba(0,229,184,0.09);display:flex;align-items:center;justify-content:center;flex-shrink:0">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--accent)"
+                                        stroke-width="2">
+                                        <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12" />
+                                    </svg></div>
+                                <div>
+                                    <div style="font-family:var(--fd);font-weight:700;margin-bottom:2px">Upload</div>
+                                    <div style="color:var(--text2)">Drag-and-drop multiple call recordings</div>
+                                </div>
+                            </div>
+                            <div style="display:flex;gap:11px;align-items:flex-start">
+                                <div
+                                    style="width:32px;height:32px;border-radius:8px;background:var(--blue-d);display:flex;align-items:center;justify-content:center;flex-shrink:0">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--blue)"
+                                        stroke-width="2">
+                                        <path d="M12 1a3 3 0 00-3 3v8a3 3 0 006 0V4a3 3 0 00-3-3z" />
+                                        <path d="M19 10v2a7 7 0 01-14 0v-2" />
+                                    </svg></div>
+                                <div>
+                                    <div style="font-family:var(--fd);font-weight:700;margin-bottom:2px">Transcription
+                                    </div>
+                                    <div style="color:var(--text2)">AI transcribes speech in regional languages</div>
+                                </div>
+                            </div>
+                            <div style="display:flex;gap:11px;align-items:flex-start">
+                                <div
+                                    style="width:32px;height:32px;border-radius:8px;background:var(--amber-d);display:flex;align-items:center;justify-content:center;flex-shrink:0">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--amber)"
+                                        stroke-width="2">
+                                        <circle cx="11" cy="11" r="8" />
+                                        <path d="M21 21l-4.35-4.35" />
+                                    </svg></div>
+                                <div>
+                                    <div style="font-family:var(--fd);font-weight:700;margin-bottom:2px">NLP Analysis
+                                    </div>
+                                    <div style="color:var(--text2)">Detects scam patterns, OTP requests, authority
+                                        claims</div>
+                                </div>
+                            </div>
+                            <div style="display:flex;gap:11px;align-items:flex-start">
+                                <div
+                                    style="width:32px;height:32px;border-radius:8px;background:var(--red-d);display:flex;align-items:center;justify-content:center;flex-shrink:0">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--red)"
+                                        stroke-width="2">
+                                        <path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 01-3.46 0" />
+                                    </svg></div>
+                                <div>
+                                    <div style="font-family:var(--fd);font-weight:700;margin-bottom:2px">Alert</div>
+                                    <div style="color:var(--text2)">Instant toast alerts + dashboard update with risk
+                                        scores</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ════ ALERT LOG PAGE ════ -->
+        <div id="p-about" class="page" style="padding: 0;">
+            <iframe src="about.html" style="width:100%; height:calc(100vh - 140px); border:none; background:transparent;"></iframe>
+        </div>
+        <div id="p-alerts" class="page">
+            <div id="alEmpty"
+                style="text-align:center;padding:56px 20px;background:var(--bg2);border:1px solid var(--border);border-radius:14px">
+                <div
+                    style="width:52px;height:52px;background:var(--bg3);border-radius:50%;margin:0 auto 16px;display:flex;align-items:center;justify-content:center">
+                    <svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="var(--text3)"
+                        stroke-width="1.8">
+                        <path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 01-3.46 0" />
+                    </svg></div>
+                <div style="font-family:var(--fd);font-size:18px;font-weight:700;margin-bottom:8px">No alerts yet
+                </div>
+                <div style="font-size:13px;color:var(--text2)">Alerts appear here when suspicious or high-risk
+                    content is detected</div>
+            </div>
+            <div id="alFeed" style="display:none">
+                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+                    <div class="sh">
+                        <h3>All alerts</h3><span class="ss" id="alCnt"></span>
+                    </div>
+                    <button class="clear-alerts-btn" onclick="clearAlertsOnly()" title="Clear alert log only (keeps scan history)">
+                        🗑️ Clear Alerts
+                    </button>
+                </div>
+                <div id="alList"></div>
+            </div>
+        </div>
+
+        </div>
+    </div>
+
+    <script>
+
+        function openProfile() {
+  const modal = document.getElementById('profileModal');
+  modal.style.display = 'block';
+
+  // Fill stats from history
+  const t  = history.length;
+  const h  = history.filter(s => s.level === 'HIGH_RISK').length;
+  const su = history.filter(s => s.level === 'SUSPICIOUS').length;
+  const sf = history.filter(s => s.level === 'SAFE').length;
+
+  document.getElementById('pTotal').textContent = t;
+  document.getElementById('pHigh').textContent  = h;
+  document.getElementById('pSusp').textContent  = su;
+  document.getElementById('pSafe').textContent  = sf;
+
+  // Top language
+  const langCount = {};
+  history.forEach(s => { if(s.lang) langCount[s.lang] = (langCount[s.lang]||0)+1; });
+  const topLang = Object.entries(langCount).sort((a,b)=>b[1]-a[1])[0];
+  document.getElementById('pLang').textContent = topLang ? topLang[0] : '—';
+
+  // Last scan
+  const last = history[history.length - 1];
+  document.getElementById('pLastScan').textContent = last
+    ? new Date(last.time).toLocaleDateString('en-IN', { day:'numeric', month:'short', year:'numeric' })
+    : 'No scans yet';
+}
+
+function closeProfile() {
+  document.getElementById('profileModal').style.display = 'none';
+}
+
+        const _sb = supabase.createClient(
+  'https://meosdznfighczymxtfaa.supabase.co',
+  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1lb3Nkem5maWdoY3p5bXh0ZmFhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQwOTMwOTYsImV4cCI6MjA4OTY2OTA5Nn0.RcPHYFA9NW2-gRNtfSr5buNXiH1ZffbrcF39Bi5c6hY'
+);
+        let API_BASE = 'http://localhost:3000/api';
+        
+        async function checkServer() {
+          try {
+            const res = await fetch(`${API_BASE}/health`, {method: 'GET', cache: 'no-store'});
+            if (!res.ok) throw new Error('Server unhealthy');
+            return true;
+          } catch (e) {
+            showToast('info', 'Server Check', 'Backend not responding. Run: <code>npm start</code> in terminal');
+            return false;
+          }
+        }
+
+
+        let KEY = localStorage.getItem('ps_key') || '';
+        let files = [];
+        let charts = {};
+        let history = JSON.parse(localStorage.getItem('ps_history')) || [];
+        let alerts = JSON.parse(localStorage.getItem('ps_alerts')) || [];
+        
+        // Limit to last 50 for performance
+        if (history.length > 50) {
+            history = history.slice(-50);
+            localStorage.setItem('ps_history', JSON.stringify(history));
+        }
+        if (alerts.length > 50) {
+            alerts = alerts.slice(-50);
+            localStorage.setItem('ps_alerts', JSON.stringify(alerts));
+        }
+
+
+            const pages = {
+            dashboard: { title: 'Dashboard', sub: 'Overview · AI phishing detection across Indian languages' },
+            text: { title: 'Text Analysis', sub: 'Paste any message to detect scam intent in regional languages' },
+            audio: { title: 'Audio Analysis', sub: 'Upload call recordings for transcription & scam detection' },
+            alerts: { title: 'Alert Log', sub: 'All detected threats, warnings and flagged content' },
+            about: { title: 'About Us', sub: 'AI-powered phishing protection for India' }
+        };
+
+
+
+        function goTo(name, el) {
+            document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+            document.querySelectorAll('.ni').forEach(n => n.classList.remove('active'));
+            document.getElementById('p-' + name).classList.add('active');
+            if (el) el.classList.add('active');
+            const cfg = pages[name] || {};
+            document.getElementById('tbT').textContent = cfg.title || name;
+            document.getElementById('tbS').textContent = cfg.sub || '';
+        }
+
+        function saveKey() {
+            const k = document.getElementById('apiIn').value.trim();
+            if (!k) { alert('Please enter your API key'); return; }
+            KEY = k; localStorage.setItem('ps_key', k);
+            document.getElementById('km').style.display = 'none';
+            setApiStatus(true);
+            showToast('info', 'API Key Saved', 'PhishShield AI is ready to detect scams');
+        }
+        function changeKey() { document.getElementById('apiIn').value = KEY; document.getElementById('km').style.display = 'flex'; }
+        function needKey() { return true; }        
+        function setApiStatus(on) {
+            document.getElementById('aDot').className = 'api-dot ' + (on ? 'on' : 'off');
+            document.getElementById('aTxt').textContent = on ? 'API active' : 'No API key';
+        }
+
+        /* TOASTS */
+        const ico = {
+            high: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0zM12 9v5M12 17h.01"/></svg>`,
+            suspicious: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>`,
+            safe: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>`,
+            info: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>`
+        };
+        function showToast(type, title, msg, dur = 5000) {
+            const el = document.createElement('div');
+            el.className = `toast ${type}`;
+            el.innerHTML = `<div class="t-ico">${ico[type] || ico.info}</div><div class="t-body"><div class="t-title">${title}</div><div class="t-msg">${msg}</div></div><div class="t-x" onclick="closeToast(this.parentElement)">×</div>`;
+            el.onclick = () => closeToast(el);
+            document.getElementById('toasts').appendChild(el);
+            if (dur > 0) setTimeout(() => closeToast(el), dur);
+        }
+        function closeToast(el) { if (!el || !el.parentElement) return; el.classList.add('out'); setTimeout(() => el.remove(), 220); }
+
+        /* ALERT LOG */
+        function logAlert(type, title, summary, score, lang) {
+            const alert = { type, title, summary, score, lang, time: new Date() };
+            alerts.push(alert);
+            localStorage.setItem('ps_alerts', JSON.stringify(alerts));
+            const cnt = alerts.filter(a => a.type === 'high' || a.type === 'suspicious').length;
+            const b = document.getElementById('aBadge');
+            b.textContent = cnt; b.style.display = cnt > 0 ? '' : 'none';
+            renderAlertLog();
+        }
+        function renderAlertLog() {
+            const recentAlerts = alerts.slice(-50);
+            const list = document.getElementById('alList');
+            const empty = document.getElementById('alEmpty');
+            const feed = document.getElementById('alFeed');
+            document.getElementById('alCnt').textContent = `${recentAlerts.length} total`;
+            if (!recentAlerts.length) { empty.style.display = ''; feed.style.display = 'none'; return; }
+            empty.style.display = 'none'; feed.style.display = '';
+            const c = { high: ['var(--red)', 'rgba(255,63,87,0.07)', 'rgba(255,63,87,0.22)'], suspicious: ['var(--amber)', 'rgba(255,170,0,0.06)', 'rgba(255,170,0,0.18)'], safe: ['var(--accent)', 'rgba(0,229,184,0.05)', 'rgba(0,229,184,0.16)'] };
+            list.innerHTML = [...recentAlerts].reverse().map(a => {
+                const [clr, bg, bd] = c[a.type] || c.safe;
+                return `<div style="display:flex;gap:13px;align-items:flex-start;padding:14px 15px;background:${bg};border:1px solid ${bd};border-radius:10px;margin-bottom:8px">
+      <div style="width:8px;height:8px;border-radius:50%;background:${clr};margin-top:5px;flex-shrink:0"></div>
+      <div style="flex:1"><div style="font-family:var(--fd);font-size:13px;font-weight:700;color:${clr};margin-bottom:3px">${a.title}</div>
+      <div style="font-size:12px;color:var(--text2);line-height:1.5;margin-bottom:4px">${a.summary}</div>
+      <div style="font-size:11px;color:var(--text3)">Lang: ${a.lang} · Score: ${a.score}/100 · ${a.time ? new Date(a.time).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }) : '—'}</div></div>
+      <div style="font-family:var(--fd);font-size:24px;font-weight:800;color:${clr};flex-shrink:0">${a.score}</div>
+    </div>`;
+            }).join('');
+        }
+
+        /* SCAN RECORD + DASHBOARD UPDATE */
+        // FIND and REPLACE the entire recordScan function:
+function recordScan(level, score, lang, summary, tactics) {
+    const scan = { level, score, lang, summary, tactics, time: new Date() };
+    history.push(scan);
+    localStorage.setItem('ps_history', JSON.stringify(history));
+    updateDash();
+
+    // Clean summary — remove any prefix like "HIGH RISK:", "SUSPICIOUS:" etc
+    const cleanSummary = summary
+        .replace(/^HIGH RISK:\s*/i, '')
+        .replace(/^SUSPICIOUS:\s*/i, '')
+        .replace(/^SAFE:\s*/i, '')
+        .trim();
+
+    if (level === 'HIGH_RISK') {
+        showToast('high', '🚨 HIGH RISK DETECTED', cleanSummary.substring(0, 80));
+        logAlert('high', cleanSummary.substring(0, 60), cleanSummary, score, lang);
+    } else if (level === 'SUSPICIOUS') {
+        showToast('suspicious', '⚠️ Suspicious Content', cleanSummary.substring(0, 80));
+        logAlert('suspicious', cleanSummary.substring(0, 60), cleanSummary, score, lang);
+    } else {
+        showToast('safe', '✅ Content is Safe', 'No phishing indicators detected');
+    }
+}
+
+        function updateDash() {
+            // Use last 50 for stats/charts
+            const recent = history.slice(-50);
+            const t = recent.length, h = recent.filter(s => s.level === 'HIGH_RISK').length, su = recent.filter(s => s.level === 'SUSPICIOUS').length, sf = recent.filter(s => s.level === 'SAFE').length;
+
+            document.getElementById('dTotal').textContent = t;
+            document.getElementById('dHigh').textContent = h;
+            document.getElementById('dSusp').textContent = su;
+            document.getElementById('dSafe').textContent = sf;
+            document.getElementById('dTotalD').textContent = `${t} scan${t !== 1 ? 's' : ''} completed`;
+            document.getElementById('dHighD').textContent = h > 0 ? `${Math.round(h / t * 100)}% of scans` : 'None detected';
+            document.getElementById('dSuspD').textContent = su > 0 ? `${Math.round(su / t * 100)}% of scans` : 'None detected';
+            document.getElementById('dSafeD').textContent = sf > 0 ? `${Math.round(sf / t * 100)}% of scans` : '—';
+            document.getElementById('dCTA').style.display = 'none';
+            document.getElementById('dCharts').style.display = '';
+            drawDashCharts(h, su, sf);
+            drawBanner(history[history.length - 1]);
+            drawActivity();
+        }
+
+        function drawDashCharts(h, su, sf) {
+            if (charts.d) { charts.d.destroy(); delete charts.d; }
+            const dc = document.getElementById('cDonut');
+            if (dc) charts.d = new Chart(dc, { type: 'doughnut', data: { labels: ['High Risk', 'Suspicious', 'Safe'], datasets: [{ data: [h, su, sf], backgroundColor: ['#ff3f57', '#ffaa00', '#00e5b8'], borderWidth: 0, hoverOffset: 4 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, cutout: '70%' } });
+
+            const last = history[history.length - 1];
+            if (charts.r) { charts.r.destroy(); delete charts.r; }
+            if (last?.tactics) {
+                const rc = document.getElementById('cRadar');
+                if (rc) charts.r = new Chart(rc, { type: 'radar', data: { labels: Object.keys(last.tactics), datasets: [{ data: Object.values(last.tactics), backgroundColor: 'rgba(255,63,87,0.1)', borderColor: '#ff3f57', borderWidth: 1.5, pointBackgroundColor: '#ff3f57', pointRadius: 3 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { r: { min: 0, max: 100, ticks: { display: false }, grid: { color: 'rgba(255,255,255,0.05)' }, angleLines: { color: 'rgba(255,255,255,0.05)' }, pointLabels: { color: '#7a8fa8', font: { size: 10, family: 'Syne' } } } } } });
+            }
+            if (charts.l) { charts.l.destroy(); delete charts.l; }
+            const lc = document.getElementById('cLine');
+            if (lc && history.length) {
+                const lbls = history.map((_, i) => `#${i + 1}`), vals = history.map(s => s.score);
+                charts.l = new Chart(lc, { type: 'line', data: { labels: lbls, datasets: [{ data: vals, borderColor: '#4a9eff', borderWidth: 2, backgroundColor: 'rgba(74,158,255,0.06)', tension: 0.4, pointBackgroundColor: vals.map(v => v >= 70 ? '#ff3f57' : v >= 40 ? '#ffaa00' : '#00e5b8'), pointRadius: 5, fill: true }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { color: '#7a8fa8', font: { size: 10 } }, border: { color: 'rgba(255,255,255,0.05)' } }, y: { min: 0, max: 100, grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { color: '#7a8fa8', font: { size: 10 } }, border: { color: 'rgba(255,255,255,0.05)' } } } } });
+            }
+        }
+
+            function drawBanner(s) {
+            if (!s) return;
+            const rc = s.level === 'HIGH_RISK' ? 'high' : s.level === 'SUSPICIOUS' ? 'suspicious' : 'safe';
+            const ic2 = s.level === 'HIGH_RISK' ? ico.high : s.level === 'SUSPICIOUS' ? ico.suspicious : ico.safe;
+            document.getElementById('dBanner').innerHTML = `<div class="ab ${rc}" style="margin-bottom:18px">
+    <div class="ab-ico">${ic2}</div>
+    <div style="flex:1"><div class="ab-lvl">${s.level.replace('_', ' ')} — Latest Scan</div>
+    <div class="ab-sub">${s.summary} · Language: <strong>${s.lang}</strong></div></div>
+    <div style="text-align:right;flex-shrink:0"><div class="ab-num">${s.score}</div><div class="ab-numlbl">/ 100 Risk</div></div>
+  </div>`;
+        }
+
+
+    function drawActivity() {
+        const feed = document.getElementById('actFeed');
+        const recent = history.slice(-50);
+        document.getElementById('actCnt').textContent = `${recent.length} scan${recent.length !== 1 ? 's' : ''}`;
+
+feed.innerHTML = recent.slice(-8).reverse().map(s => {
+            const cls =
+                s.level === 'HIGH_RISK'
+                    ? 'high'
+                    : s.level === 'SUSPICIOUS'
+                    ? 'suspicious'
+                    : 'safe';
+
+            return `<div class="ai">
+                <div class="a-dot ${cls}"></div>
+                <div class="a-txt">${(s.summary || 'Scan').substring(0, 90)}${(s.summary || '').length > 90 ? '…' : ''}</div>
+                <div class="a-time">${s.time ? new Date(s.time).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }) : '—'}</div>
+            </div>`;
+        }).join('');            
+    }
+
+        /* SAMPLES */
+
+        const S = {
+            hi: 'आपका SBI Bank खाता 24 घंटों में बंद हो जाएगा। खाते में संदिग्ध गतिविधि पाई गई है। अभी अपना OTP और ATM PIN हमारे हेल्पलाइन नंबर 1800-XXX-0000 पर शेयर करें। देरी करने पर आपका सारा बैलेंस फ्रीज कर दिया जाएगा।',
+            ta: 'நான் TRAI அலுவலகத்திலிருந்து பேசுகிறேன். உங்கள் mobile number-ல் illegal activity கண்டுபிடிக்கப்பட்டது. 2 மணி நேரத்தில் உங்கள் SIM card block ஆகும். உடனே இந்த link-ல் click செய்து Aadhaar number கொடுங்கள்: bit.ly/trai-verify',
+            mr: 'नमस्कार, मी Maharashtra Bank Fraud Prevention Cell मधून बोलत आहे. तुमच्या खात्यातून संशयास्पद व्यवहार झाला आहे. तात्काळ तुमचा OTP आणि Debit Card नंबर आमच्या हेल्पलाइनवर शेअर करा: 1800-XXX-1234',
+            en: 'Congratulations! You have been selected as a winner in KBC Lucky Draw 2025 and won Rs 15,00,000. To claim your prize, immediately share your bank account number, Aadhaar card details, and pay Rs 2500 processing fee to UPI: prize@kbc. Call: 9999-XXX-XXX'
+        };
+        function loadS(l) { document.getElementById('tIn').value = S[l] || ''; document.getElementById('tLang').value = l; }
+
+        /* UPLOAD */
+        function handleF(e) { Array.from(e.target.files).forEach(f => { if (!files.find(x => x.name === f.name)) files.push(f); }); renderFL(); }
+        function remF(i) { files.splice(i, 1); renderFL(); }
+        function renderFL() {
+            document.getElementById('fList').innerHTML = files.map((f, i) => `<div class="fi">
+    <div class="fi-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 19V6l12-3v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="15" r="3"/></svg></div>
+    <div class="fi-n" title="${f.name}">${f.name}</div>
+    <div class="fi-s">${(f.size / 1024).toFixed(0)}KB</div>
+    <button class="fi-r" onclick="remF(${i})">×</button>
+  </div>`).join('');
+            document.getElementById('aBtn').disabled = files.length === 0;
+        }
+        const dz = document.getElementById('dz');
+        dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('dov') });
+        dz.addEventListener('dragleave', () => dz.classList.remove('dov'));
+        dz.addEventListener('drop', e => { e.preventDefault(); dz.classList.remove('dov'); Array.from(e.dataTransfer.files).filter(f => /\.(mp3|wav|ogg|m4a|aac|webm)$/i.test(f.name)).forEach(f => { if (!files.find(x => x.name === f.name)) files.push(f); }); renderFL(); });
+
+        /* HELPERS */
+        function rc(l) { return { SAFE: 'safe', SUSPICIOUS: 'suspicious', HIGH_RISK: 'high' }[l] || 'suspicious' }
+        function col(l) { return { SAFE: 'var(--accent)', SUSPICIOUS: 'var(--amber)', HIGH_RISK: 'var(--red)' }[l] || 'var(--amber)' }
+        function ico2(l) {
+            if (l === 'SAFE') return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>`;
+            if (l === 'HIGH_RISK') return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0zM12 9v5M12 17h.01"/></svg>`;
+            return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>`;
+        }
+        function dc(s) { return { high: 'high', medium: 'medium', low: 'low' }[s] || 'low' }
+        function hl(text, segs) {
+            if (!segs || !segs.length) return text;
+            let r = text;
+            segs.forEach(s => { try { const e = s.text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); r = r.replace(new RegExp(e, 'g'), `<span class="hl-${s.riskType === 'red' ? 'red' : 'amber'}">${s.text}</span>`); } catch (e) { } });
+            return r;
+        }
+        function lname(c) { return { auto: 'Auto-detect', hi: 'Hindi', mr: 'Marathi', ta: 'Tamil', bn: 'Bengali', te: 'Telugu', pa: 'Punjabi', en: 'English' }[c] || 'Unknown' }
+
+        function renderBanner(p, container) {
+            const cls = rc(p.riskLevel), color = col(p.riskLevel);
+            container.innerHTML = `<div class="ab ${cls}">
+    <div class="ab-ico">${ico2(p.riskLevel)}</div>
+    <div style="flex:1"><div class="ab-lvl">${p.riskLevel.replace('_', ' ')}</div>
+    <div class="ab-sub">${p.summary || ''} · Language: <strong>${p.detectedLanguage || '—'}</strong></div></div>
+    <div style="text-align:right;flex-shrink:0"><div class="ab-num">${p.riskScore}</div><div class="ab-numlbl">/ 100</div></div>
+  </div>`;
+}
+
+// Maps server response fields to frontend format
+function buildFindings(result) {
+    // If server already sent findings array, use it
+    if (result.findings && result.findings.length) return result.findings;
+    
+    // Build from Groq response fields
+    const findings = [];
+    const reasons = result.reasons || [];
+    const level = result.risk_level || result.riskLevel || 'SAFE';
+    const severity = level === 'HIGH_RISK' ? 'high' : level === 'SUSPICIOUS' ? 'medium' : 'low';
+    
+    reasons.forEach(reason => {
+        findings.push({
+            severity: severity,
+            text: reason,
+            type: detectFindingType(reason)
+        });
+    });
+    return findings;
+}
+
+function detectFindingType(reason) {
+    const r = reason.toLowerCase();
+    if (r.includes('otp') || r.includes('pin') || r.includes('password')) return 'OTP_PHISHING';
+    if (r.includes('bank') || r.includes('account') || r.includes('kyc'))  return 'BANK_FRAUD';
+    if (r.includes('prize') || r.includes('lottery') || r.includes('kbc')) return 'PRIZE_SCAM';
+    if (r.includes('police') || r.includes('rbi') || r.includes('trai'))   return 'AUTHORITY_SCAM';
+    if (r.includes('arrest') || r.includes('fir') || r.includes('court'))  return 'ARREST_THREAT';
+    if (r.includes('urgency') || r.includes('immediate'))                  return 'URGENCY_TACTIC';
+    if (r.includes('link') || r.includes('click'))                         return 'SUSPICIOUS_LINK';
+    return 'SCAM_INDICATOR';
+}
+
+function buildHighlights(result) {
+    // If server already sent highlighted segments, use it
+    if (result.highlightedSegments && result.highlightedSegments.length) return result.highlightedSegments;
+    
+    // Build from Groq highlighted_phrases field
+    const phrases = result.highlighted_phrases || [];
+    const level = result.risk_level || result.riskLevel || 'SAFE';
+    return phrases.map(phrase => ({
+        text: phrase,
+        riskType: level === 'HIGH_RISK' ? 'red' : 'amber'
+    }));
+}
+
+function buildTactics(result) {
+    // If server already sent tactics, use it
+    if (result.manipulationTactics && Object.keys(result.manipulationTactics).length) {
+        return result.manipulationTactics;
+    }
+    
+    // Build from Groq response
+    const tactics = {};
+    const reasons = result.reasons || [];
+    const score = result.scam_probability || result.riskScore || 0;
+    
+    reasons.forEach(r => {
+        const rl = r.toLowerCase();
+        if (rl.includes('urgency') || rl.includes('immediate') || rl.includes('24'))
+            tactics['Urgency'] = Math.min(95, score + 10);
+        if (rl.includes('authority') || rl.includes('police') || rl.includes('rbi') || rl.includes('sbi'))
+            tactics['Authority'] = Math.min(95, score + 5);
+        if (rl.includes('otp') || rl.includes('pin') || rl.includes('bank'))
+            tactics['Phishing'] = Math.min(95, score + 15);
+        if (rl.includes('prize') || rl.includes('lottery') || rl.includes('won'))
+            tactics['Greed'] = Math.min(90, score);
+        if (rl.includes('arrest') || rl.includes('fir') || rl.includes('legal'))
+            tactics['Fear'] = Math.min(90, score + 5);
+    });
+    
+    // Always add at least one tactic for high risk
+    if (score >= 70 && Object.keys(tactics).length === 0) {
+        tactics['Scam'] = score;
+    }
+    return tactics;
+}
+
+function buildRecommendation(result) {
+    const level = result.risk_level || result.riskLevel || 'SAFE';
+    if (level === 'HIGH_RISK')   return '🚨 DO NOT respond or share any information. Block the sender and report immediately.';
+    if (level === 'SUSPICIOUS')  return '⚠️ Be cautious. Verify the sender through official channels before responding.';
+    return '✅ No phishing indicators detected. Message appears safe.';
+}// Maps server response fields to frontend format
+
+        /* TEXT ANALYSIS */
+        async function doText() {
+            const text = document.getElementById('tIn').value.trim();
+            if (!text) { alert('Please paste a message.'); return; }
+            
+            if (!(await checkServer())) {
+              document.getElementById('tRes').innerHTML = `<div style="padding:16px;color:var(--red);background:var(--bg3);border:1px solid var(--border2);border-radius:12px;text-align:center;font-size:14px">
+                <div style="margin-bottom:8px">🚫 Backend + API Key required</div>
+                <code style="background:var(--bg4);padding:4px 8px;border-radius:6px;font-size:12px;display:block;margin-top:6px">npm start &amp;&amp; Add GROK_API_KEY to .env</code>
+              </div>`;
+              return;
+            }
+            
+            const lang = lname(document.getElementById('tLang').value);
+            const btn = document.querySelector('#p-text .abn');
+            btn.disabled = true;
+            document.getElementById('tRes').innerHTML = `<div class="lbox"><div class="sp"></div>Analyzing in ${lang}…</div>`;
+            try {
+    const res = await fetch(`${API_BASE}/analyze/text`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            text: text,
+            language: document.getElementById('tLang').value,
+            apiKey: KEY
+        })
+    });
+    
+    const d = await res.json();
+    if (!res.ok) throw new Error(d.error || 'Server error');
+    
+    const result = d.success ? d.result : d;
+
+    const p = {
+        riskLevel:           result.risk_level          || result.riskLevel          || 'SAFE',
+        riskScore:           result.scam_probability    || result.riskScore          || 0,
+        detectedLanguage:    result.language            || result.detectedLanguage   || lang,
+        summary:             result.summary             || 'Analysis complete',
+        findings:            buildFindings(result),
+        highlightedSegments: buildHighlights(result),
+        manipulationTactics: buildTactics(result),
+        suspiciousLinks:     result.suspiciousLinks     || [],
+        recommendation:      result.recommendation      || buildRecommendation(result)
+    };
+
+    renderTRes(p, text);
+
+    // ← ONE call only, no duplicate alerts
+recordScan(
+    p.riskLevel,
+    p.riskScore,
+    p.detectedLanguage,
+    p.summary,
+    p.manipulationTactics
+);
+
+// Save to Supabase
+try {
+  const { data: { session } } = await _sb.auth.getSession();
+  if (session) {
+    await _sb.from('text_analyses').insert({
+      user_id:    session.user.id,
+      message:    text,
+      language:   p.detectedLanguage,
+      risk_level: p.riskLevel,
+      risk_score: p.riskScore,
+      summary:    p.summary
+    });
+    console.log('✅ Saved to Supabase');
+  }
+} catch(e) {
+  console.log('Supabase save failed:', e.message);
+}
+
+} catch (e) {
+    document.getElementById('tRes').innerHTML = `<div style="padding:13px;color:var(--red);font-size:13px;background:var(--bg2);border:1px solid var(--border);border-radius:8px;margin-top:11px">Error: ${e.message}</div>`;
+}
+            btn.disabled = false;
+        }
+
+        function renderTRes(p, original) {
+            const clr = col(p.riskLevel), findings = p.findings || [], tactics = p.manipulationTactics || {}, links = p.suspiciousLinks || [];
+            const banner = document.createElement('div'); renderBanner(p, banner);
+            let html = `<div class="rs">${banner.innerHTML}
+    <div style="margin-bottom:14px">
+      <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--text2);margin-bottom:5px"><span style="font-family:var(--fd);font-weight:700;text-transform:uppercase;letter-spacing:0.5px">Scam probability</span><span style="color:${clr};font-weight:700">${p.riskScore}/100</span></div>
+      <div class="sbw"><div class="sbf" id="sb1" style="width:0%;background:${clr}"></div></div>
+    </div>
+    <div class="mr">
+      <div class="mm"><div class="mm-l">Language</div><div class="mm-v" style="font-size:14px;margin-top:3px">${p.detectedLanguage || '—'}</div></div>
+      <div class="mm"><div class="mm-l">Threats</div><div class="mm-v" style="color:${findings.filter(f => f.severity === 'high').length > 0 ? 'var(--red)' : 'var(--text)'}">${findings.filter(f => f.severity === 'high').length}</div></div>
+      <div class="mm"><div class="mm-l">Links</div><div class="mm-v" style="color:${links.length ? 'var(--red)' : 'var(--text)'}">${links.length}</div></div>
+      <div class="mm"><div class="mm-l">Tactics</div><div class="mm-v">${Object.values(tactics).filter(v => v > 50).length}</div></div>
+    </div>`;
+
+            if (findings.length) html += `<div style="font-family:var(--fd);font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--text3);margin-bottom:7px">Findings (${findings.length})</div>
+    <div class="flist">${findings.map((f, i) => `<div class="fitem" style="animation-delay:${i * 0.05}s"><div class="fdot ${dc(f.severity)}"></div><div><div style="font-size:13px;line-height:1.5">${f.text}</div><span class="ftag ${dc(f.severity)}">${f.type || ''}</span></div></div>`).join('')}</div>`;
+
+            html += `<div style="font-family:var(--fd);font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--text3);margin-bottom:7px">Highlighted message</div>
+    <div class="hmsg">${hl(original, p.highlightedSegments)}</div>`;
+
+            if (links.length) html += `<div style="font-family:var(--fd);font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--text3);margin-bottom:7px">Suspicious links</div>
+    ${links.map(l => `<div class="lnk"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/></svg>${l}</div>`).join('')}`;
+
+            if (Object.keys(tactics).length) html += `<div style="font-family:var(--fd);font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--text3);margin-top:12px;margin-bottom:7px">Manipulation tactics</div>
+    <div class="tlist">${Object.entries(tactics).map(([k, v]) => `<div class="trow"><div class="tn">${k}</div><div class="tt"><div class="tf" style="width:0%;background:${v > 70 ? 'var(--red)' : v > 40 ? 'var(--amber)' : 'var(--accent)'}" data-w="${v}"></div></div><div class="tp">${v}%</div></div>`).join('')}</div>`;
+
+            html += `<div class="rec"><strong>Recommendation:</strong> ${p.recommendation || 'Exercise caution.'}</div></div>`;
+            document.getElementById('tRes').innerHTML = html;
+            setTimeout(() => { const b = document.getElementById('sb1'); if (b) b.style.width = p.riskScore + '%'; document.querySelectorAll('.tf').forEach(e => e.style.width = e.dataset.w + '%'); }, 80);
+        }
+
+        /* AUDIO ANALYSIS */
+        async function doAudio() {
+            if (!files.length) return;
+            
+            if (!(await checkServer())) {
+              document.getElementById('aRes').innerHTML = `<div style="padding:16px;color:var(--red);background:var(--bg3);border:1px solid var(--border2);border-radius:12px;text-align:center;font-size:14px">
+                <div style="margin-bottom:8px">🚫 Backend + API Key required</div>
+                <code style="background:var(--bg4);padding:4px 8px;border-radius:6px;font-size:12px;display:block;margin-top:6px">npm start &amp;&amp; Add GROK_API_KEY to .env</code>
+              </div>`;
+              return;
+            }
+            
+            const btn = document.getElementById('aBtn'); btn.disabled = true;
+            document.getElementById('aRes').innerHTML = `<div class="lbox"><div class="sp"></div>Transcribing & analyzing ${files.length} file(s)…</div>`;
+            const lang = lname(document.getElementById('aLang').value);
+            
+            try {
+                const formData = new FormData();
+                formData.append("files", files[0]); // Send first file
+                formData.append("language", document.getElementById('aLang').value);
+                formData.append("apiKey", KEY);
+
+                const res = await fetch(`${API_BASE}/analyze/audio`, {
+                    method: 'POST', body: formData
+                });
+                const d = await res.json();
+                
+                if (!res.ok) {
+                    throw new Error(d.detail || 'Server returned an error');
+                }
+
+                const result = d.success ? d.result : d;
+                const p = {
+                    overallRiskLevel: result.overallRiskLevel || result.riskLevel || 'SAFE',
+                    overallRiskScore: result.overallRiskScore || result.riskScore || 0,
+                    detectedLanguages: result.detectedLanguages || lang,
+                    summary: result.summary || result.transcript || 'Analysis complete',
+                    files: result.files || [{
+                        filename: files[0].name,
+                        transcript: result.transcript || '',
+                        riskLevel: result.riskLevel || 'SAFE',
+                        riskScore: result.riskScore || 0,
+                        findings: result.findings || result.detected_tactics || [],
+                        highlightedSegments: result.highlightedSegments || result.suspicious_phrases || []
+                    }],
+                    manipulationTactics: result.manipulationTactics || {},
+                    recommendation: result.recommendation || 'Safe.'
+                };
+
+                renderARes(p);
+                recordScan(p.overallRiskLevel, p.overallRiskScore, p.detectedLanguages || lang, p.summary || `1 audio file analyzed`, p.manipulationTactics || {});
+            } catch (e) {
+                document.getElementById('aRes').innerHTML = `<div style="padding:13px;color:var(--red);font-size:13px;background:var(--bg2);border:1px solid var(--border);border-radius:8px;margin-top:11px">Error: ${e.message}</div>`;
+            }
+            btn.disabled = false;
+        }
+
+        function renderARes(p) {
+            const clr = col(p.overallRiskLevel), pf = p.files || [], tactics = p.manipulationTactics || {};
+            const fakeP = { riskLevel: p.overallRiskLevel, riskScore: p.overallRiskScore, detectedLanguage: p.detectedLanguages, summary: `${pf.length} file(s) analyzed` };
+            const banner = document.createElement('div'); renderBanner(fakeP, banner);
+            let html = `<div class="rs">${banner.innerHTML}
+    <div style="margin-bottom:14px">
+      <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--text2);margin-bottom:5px"><span style="font-family:var(--fd);font-weight:700;text-transform:uppercase;letter-spacing:0.5px">Overall risk score</span><span style="color:${clr};font-weight:700">${p.overallRiskScore}/100</span></div>
+      <div class="sbw"><div class="sbf" id="sb2" style="width:0%;background:${clr}"></div></div>
+    </div>
+    <div style="font-family:var(--fd);font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--text3);margin-bottom:9px">${pf.length} file(s) analyzed</div>`;
+        }
+        function clearAlertsOnly() {
+            if (confirm('Clear alert log only? Scan history will be preserved.')) {
+                localStorage.removeItem('ps_alerts');
+                alerts = [];
+                document.getElementById('aBadge').style.display = 'none';
+                document.getElementById('aBadge').textContent = '0';
+                renderAlertLog();
+                showToast('info', 'Alerts Cleared', 'Alert log reset (scan history preserved)');
+            }
+        }
+        
+        function clearAllData() {
+            if (confirm('Clear all scan history and alerts? This cannot be undone.')) {
+                localStorage.removeItem('ps_history');
+                localStorage.removeItem('ps_alerts');
+                history = [];
+                alerts = [];
+                document.getElementById('aBadge').style.display = 'none';
+                document.getElementById('aBadge').textContent = '0';
+                updateDash();
+                renderAlertLog();
+                showToast('info', 'Data Cleared', 'Scan history and alerts reset');
+            }
+        }
+        
+        /* INIT */
+        // Logout function
+
+        async function logout() {
+  try {
+    const _sb = supabase.createClient(
+      'https://meosdznfighczymxtfaa.supabase.co',
+      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1lb3Nkem5maWdoY3p5bXh0ZmFhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQwOTMwOTYsImV4cCI6MjA4OTY2OTA5Nn0.RcPHYFA9NW2-gRNtfSr5buNXiH1ZffbrcF39Bi5c6hY'
+    );
+    await _sb.auth.signOut();
+  } catch(e) {}
+  window.location.href = '/auth.html';
+}
+
+        /* INIT */
+async function loadSavedData() {
+  history = JSON.parse(localStorage.getItem('ps_history') || '[]');
+  alerts  = JSON.parse(localStorage.getItem('ps_alerts')  || '[]');
+  if (history.length > 50) history = history.slice(-50);
+  if (alerts.length  > 50) alerts  = alerts.slice(-50);
+  const cnt = alerts.filter(a => a.type === 'high' || a.type === 'suspicious').length;
+  const b = document.getElementById('aBadge');
+  if (b) { b.textContent = cnt; b.style.display = cnt > 0 ? '' : 'none'; }
+  if (history.length > 0) updateDash();
+  renderAlertLog();
+  KEY = 'backend';
+  setApiStatus(true);
+
+  // Load user profile
+try {
+  const { data: { session } } = await _sb.auth.getSession();
+  if (session) {
+    const email = session.user.email;
+    const name = session.user.user_metadata?.full_name || email.split('@')[0];
+    const initial = name.charAt(0).toUpperCase();
+    document.getElementById('userAvatar').textContent = initial;
+    document.getElementById('userName').textContent = name;
+    document.getElementById('welcomeName').textContent = name;
+
+// Profile modal data
+    document.getElementById('pAvatar').textContent  = initial;
+    document.getElementById('pName').textContent    = name;
+    document.getElementById('pEmail').textContent   = email;
+    document.getElementById('pMember').textContent  = 'Member since ' +
+    new Date(session.user.created_at).toLocaleDateString('en-IN', { month:'long', year:'numeric' });;
+    }
+} catch(e) {}
+}
+
+window.addEventListener('load', () => {
+  document.getElementById('tbT').textContent = 'Dashboard';
+  document.getElementById('km').style.display = 'none';
+          // Supabase auth guard
+const _sb = supabase.createClient(
+  'https://meosdznfighczymxtfaa.supabase.co',
+  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1lb3Nkem5maWdoY3p5bXh0ZmFhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQwOTMwOTYsImV4cCI6MjA4OTY2OTA5Nn0.RcPHYFA9NW2-gRNtfSr5buNXiH1ZffbrcF39Bi5c6hY'
+);
+
+(async () => {
+  try {
+    const { data: { session } } = await _sb.auth.getSession();
+    if (!session) {
+      window.location.href = '/auth.html';
+      return;
+    }
+    // Session exists — load saved data
+    loadSavedData();
+  } catch(e) {
+    console.log('Auth check failed:', e.message);
+      loadSavedData();
+  }
+})();
+});
+    </script>
+
+    <!-- PROFILE MODAL -->
+<div id="profileModal" style="position:fixed;inset:0;z-index:400;display:none">
+  <div id="profileOverlay" onclick="closeProfile()" style="position:absolute;inset:0;background:rgba(0,0,0,0.6);backdrop-filter:blur(4px)"></div>
+  <div id="profilePanel" style="position:absolute;right:0;top:0;height:100vh;width:340px;background:var(--bg2);border-left:1px solid var(--border2);padding:28px;overflow-y:auto;animation:slideIn 0.3s cubic-bezier(.16,1,.3,1)">
+    
+    <!-- Header -->
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:24px">
+      <div style="font-family:var(--fd);font-size:14px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--text3)">Profile</div>
+      <div onclick="closeProfile()" style="cursor:pointer;color:var(--text3);font-size:20px;line-height:1;padding:4px">×</div>
+    </div>
+
+    <!-- Avatar + Name -->
+    <div style="text-align:center;margin-bottom:24px;padding-bottom:24px;border-bottom:1px solid var(--border)">
+      <div id="pAvatar" style="width:64px;height:64px;border-radius:50%;background:var(--accent);display:flex;align-items:center;justify-content:center;font-size:26px;font-weight:800;color:#000;font-family:var(--fd);margin:0 auto 12px">?</div>
+      <div id="pName" style="font-family:var(--fd);font-size:18px;font-weight:800;margin-bottom:4px">—</div>
+      <div id="pEmail" style="font-size:12px;color:var(--text2)">—</div>
+      <div id="pMember" style="font-size:11px;color:var(--text3);margin-top:6px;font-family:var(--fd)">Member since —</div>
+    </div>
+
+    <!-- Stats -->
+    <div style="font-family:var(--fd);font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--text3);margin-bottom:12px">Scan Statistics</div>
+    
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:24px">
+      <div style="background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:14px">
+        <div style="font-size:10px;color:var(--text3);font-family:var(--fd);font-weight:700;text-transform:uppercase;margin-bottom:6px">Total Scans</div>
+        <div id="pTotal" style="font-family:var(--fd);font-size:28px;font-weight:800;color:var(--blue)">0</div>
+      </div>
+      <div style="background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:14px">
+        <div style="font-size:10px;color:var(--text3);font-family:var(--fd);font-weight:700;text-transform:uppercase;margin-bottom:6px">High Risk</div>
+        <div id="pHigh" style="font-family:var(--fd);font-size:28px;font-weight:800;color:var(--red)">0</div>
+      </div>
+      <div style="background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:14px">
+        <div style="font-size:10px;color:var(--text3);font-family:var(--fd);font-weight:700;text-transform:uppercase;margin-bottom:6px">Suspicious</div>
+        <div id="pSusp" style="font-family:var(--fd);font-size:28px;font-weight:800;color:var(--amber)">0</div>
+      </div>
+      <div style="background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:14px">
+        <div style="font-size:10px;color:var(--text3);font-family:var(--fd);font-weight:700;text-transform:uppercase;margin-bottom:6px">Safe</div>
+        <div id="pSafe" style="font-family:var(--fd);font-size:28px;font-weight:800;color:var(--accent)">0</div>
+      </div>
+    </div>
+
+    <!-- Insights -->
+    <div style="font-family:var(--fd);font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--text3);margin-bottom:12px">Insights</div>
+
+    <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:28px">
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 14px;background:var(--bg3);border:1px solid var(--border);border-radius:9px">
+        <div style="font-size:12px;color:var(--text2);font-family:var(--fd)">Top Language</div>
+        <div id="pLang" style="font-size:12px;font-weight:700;font-family:var(--fd);color:var(--text)">—</div>
+      </div>
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 14px;background:var(--bg3);border:1px solid var(--border);border-radius:9px">
+        <div style="font-size:12px;color:var(--text2);font-family:var(--fd)">Last Scan</div>
+        <div id="pLastScan" style="font-size:12px;font-weight:700;font-family:var(--fd);color:var(--text)">—</div>
+      </div>
+    </div>
+
+    <!-- Logout -->
+    <button onclick="logout()" style="width:100%;padding:12px;background:var(--red-d);border:1px solid rgba(255,63,87,0.3);border-radius:9px;color:var(--red);font-family:var(--fd);font-size:13px;font-weight:700;cursor:pointer;transition:all 0.2s" onmouseover="this.style.background='var(--red)';this.style.color='#fff'" onmouseout="this.style.background='var(--red-d)';this.style.color='var(--red)'">
+      Sign Out
+    </button>
+
+  </div>
+</div>
+
+</body>
+</html>

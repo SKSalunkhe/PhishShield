@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>PhishShield AI — Create Account</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet"/>
+<style>
+  :root {
+    --bg: #0e0e0e;
+    --surface: #161616;
+    --surface2: #1e1e1e;
+    --border: #2a2a2a;
+    --accent: #00f5c4;
+    --accent-dim: rgba(0,245,196,0.12);
+    --accent-glow: rgba(0,245,196,0.25);
+    --text: #f0f0f0;
+    --muted: #666;
+    --danger: #ff4d4d;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Syne', sans-serif;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 32px;
+    border-bottom: 1px solid var(--border);
+    background: #111;
+  }
+
+  .brand { display: flex; align-items: center; gap: 10px; }
+  .brand-icon {
+    width: 34px; height: 34px;
+    background: var(--accent); border-radius: 9px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px;
+  }
+  .brand-name { font-size: 15px; font-weight: 800; }
+  .brand-sub  { font-size: 10px; color: var(--muted); font-family: 'JetBrains Mono', monospace; margin-top: 2px; }
+
+  .lang-pills { display: flex; gap: 8px; }
+  .lang-pill {
+    padding: 4px 12px;
+    border: 1px solid var(--border); border-radius: 20px;
+    font-size: 12px; color: var(--muted); cursor: pointer;
+    font-family: 'JetBrains Mono', monospace;
+    transition: border-color .2s, color .2s;
+  }
+  .lang-pill:hover { border-color: var(--accent); color: var(--accent); }
+
+  .content {
+    flex: 1; display: flex; align-items: center; justify-content: center;
+    padding: 40px 20px; position: relative;
+  }
+
+  .glow-orb {
+    position: absolute; width: 500px; height: 500px; border-radius: 50%;
+    background: radial-gradient(circle, rgba(0,245,196,0.06) 0%, transparent 70%);
+    pointer-events: none; top: 50%; left: 50%; transform: translate(-50%,-50%);
+  }
+
+  .card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 16px; width: 100%; max-width: 420px;
+    padding: 36px; position: relative; z-index: 1;
+    animation: up .4s cubic-bezier(.16,1,.3,1) forwards;
+  }
+  @keyframes up { from{opacity:0;transform:translateY(16px)} to{opacity:1;transform:none} }
+
+  .card-title { font-size: 22px; font-weight: 800; margin-bottom: 4px; }
+  .card-sub   { font-size: 13px; color: var(--muted); margin-bottom: 28px; }
+
+  .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .form-group { margin-bottom: 16px; }
+
+  label {
+    display: block; font-size: 11px; color: var(--muted);
+    margin-bottom: 6px; letter-spacing: 1px;
+    font-family: 'JetBrains Mono', monospace; text-transform: uppercase;
+  }
+
+  /* Wrapper holds icon + input + eye button */
+  .field {
+    position: relative; display: flex; align-items: center;
+  }
+
+  .field-icon {
+    position: absolute; left: 12px; top: 50%; transform: translateY(-50%);
+    width: 15px; height: 15px; color: var(--muted); pointer-events: none;
+    display: flex; align-items: center; justify-content: center;
+  }
+
+  .field input {
+    width: 100%; background: var(--surface2);
+    border: 1px solid var(--border); border-radius: 9px;
+    padding: 11px 12px 11px 38px;
+    color: var(--text); font-size: 14px; font-family: 'Syne', sans-serif;
+    outline: none; transition: border-color .2s, box-shadow .2s;
+  }
+  .field input.has-eye { padding-right: 40px; }
+  .field input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-dim); }
+  .field input::placeholder { color: #3a3a3a; }
+
+  .eye {
+    position: absolute; right: 10px; top: 50%; transform: translateY(-50%);
+    background: none; border: none; cursor: pointer;
+    color: var(--muted); padding: 4px;
+    display: flex; align-items: center; justify-content: center;
+    border-radius: 4px; transition: color .2s;
+    line-height: 0;
+  }
+  .eye:hover { color: var(--text); }
+
+  .strength-bar { display: flex; gap: 4px; margin-top: 8px; }
+  .seg { height: 3px; flex: 1; border-radius: 2px; background: var(--border); transition: background .3s; }
+  .strength-lbl { font-size: 11px; margin-top: 4px; font-family: 'JetBrains Mono', monospace; color: var(--muted); }
+
+  .err { font-size: 11px; color: var(--danger); margin-top: 5px; font-family: 'JetBrains Mono', monospace; display: none; }
+
+  .btn {
+    width: 100%; background: var(--accent); color: #000;
+    border: none; border-radius: 9px; padding: 13px;
+    font-size: 14px; font-weight: 700; cursor: pointer;
+    font-family: 'Syne', sans-serif; margin-top: 8px;
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+    transition: opacity .2s, box-shadow .2s, transform .1s;
+  }
+  .btn:hover { opacity: .9; box-shadow: 0 0 20px var(--accent-glow); }
+  .btn:active { transform: scale(.98); }
+
+  .terms { font-size: 11px; color: var(--muted); text-align: center; margin-top: 16px; line-height: 1.6; }
+  .terms span { color: var(--accent); cursor: pointer; }
+
+  .login-link {
+    text-align: center; margin-top: 20px; font-size: 13px; color: var(--muted);
+    padding-top: 20px; border-top: 1px solid var(--border);
+  }
+  .login-link span { color: var(--accent); font-weight: 600; cursor: pointer; }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="brand">
+    <div class="brand-icon">🛡</div>
+    <div>
+      <div class="brand-name">PhishShield</div>
+      <div class="brand-sub">AI</div>
+    </div>
+  </div>
+  <div class="lang-pills">
+    <div class="lang-pill">हिन्दी</div>
+    <div class="lang-pill">मराठी</div>
+    <div class="lang-pill">தமிழ்</div>
+    <div class="lang-pill">বাংলা</div>
+    <div class="lang-pill">తెలుగు</div>
+  </div>
+</div>
+
+<div class="content">
+  <div class="glow-orb"></div>
+
+  <div class="card">
+    <div class="card-title">Create account</div>
+    <div class="card-sub">Start detecting scams in regional languages</div>
+
+    <div class="row2">
+      <div class="form-group">
+        <label>First Name</label>
+        <div class="field">
+          <span class="field-icon">
+            <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+          </span>
+          <input type="text" placeholder="Rahul" />
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Last Name</label>
+        <div class="field">
+          <span class="field-icon">
+            <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+          </span>
+          <input type="text" placeholder="Sharma" />
+        </div>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label>Email Address</label>
+      <div class="field">
+        <span class="field-icon">
+          <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+        </span>
+        <input type="email" id="email" placeholder="you@example.com" />
+      </div>
+      <div class="err" id="email-err">Please enter a valid email.</div>
+    </div>
+
+    <div class="form-group">
+      <label>Password</label>
+      <div class="field">
+        <span class="field-icon">
+          <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
+        </span>
+        <input type="password" id="pass" class="has-eye" placeholder="••••••••" oninput="strength(this.value)" />
+        <button class="eye" type="button" id="eye1">
+          <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+        </button>
+      </div>
+      <div class="strength-bar">
+        <div class="seg" id="s1"></div><div class="seg" id="s2"></div>
+        <div class="seg" id="s3"></div><div class="seg" id="s4"></div>
+      </div>
+      <div class="strength-lbl" id="slbl"></div>
+    </div>
+
+    <div class="form-group" style="margin-bottom:24px">
+      <label>Confirm Password</label>
+      <div class="field">
+        <span class="field-icon">
+          <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
+        </span>
+        <input type="password" id="confirm" class="has-eye" placeholder="••••••••" />
+        <button class="eye" type="button" id="eye2">
+          <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+        </button>
+      </div>
+      <div class="err" id="confirm-err">Passwords do not match.</div>
+    </div>
+
+    <button class="btn" type="button" id="submitBtn">
+      Create Account
+      <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+    </button>
+
+    <div class="terms">
+      By creating an account you agree to our <span>Terms of Service</span> and <span>Privacy Policy</span>
+    </div>
+    <div class="login-link">
+      Already have an account? <span>Sign in</span>
+    </div>
+  </div>
+</div>
+
+<script>
+  var OPEN = '<svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>';
+  var CLOSED = '<svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19m-6.72-1.07a3 3 0 11-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>';
+
+  function makeToggle(eyeId, inputId) {
+    var btn = document.getElementById(eyeId);
+    var inp = document.getElementById(inputId);
+    btn.addEventListener('click', function() {
+      if (inp.type === 'password') {
+        inp.type = 'text';
+        btn.innerHTML = CLOSED;
+      } else {
+        inp.type = 'password';
+        btn.innerHTML = OPEN;
+      }
+    });
+  }
+
+  makeToggle('eye1', 'pass');
+  makeToggle('eye2', 'confirm');
+
+  function strength(val) {
+    var score = 0;
+    if (val.length >= 8) score++;
+    if (/[A-Z]/.test(val)) score++;
+    if (/[0-9]/.test(val)) score++;
+    if (/[^A-Za-z0-9]/.test(val)) score++;
+    var colors = ['#ff4d4d','#ff9900','#f5c518','#00f5c4'];
+    var labels = ['Weak','Fair','Good','Strong'];
+    for (var i = 1; i <= 4; i++) {
+      document.getElementById('s'+i).style.background = i <= score ? colors[score-1] : 'var(--border)';
+    }
+    var lbl = document.getElementById('slbl');
+    lbl.textContent = val.length ? (labels[score-1] || '') : '';
+    lbl.style.color = score ? colors[score-1] : 'var(--muted)';
+  }
+
+  document.getElementById('submitBtn').addEventListener('click', function() {
+    var email = document.getElementById('email').value;
+    var pass  = document.getElementById('pass').value;
+    var conf  = document.getElementById('confirm').value;
+    var ok = true;
+    var ee = document.getElementById('email-err');
+    var ce = document.getElementById('confirm-err');
+    if (!email || !/\S+@\S+\.\S+/.test(email)) { ee.style.display='block'; ok=false; } else ee.style.display='none';
+    if (!pass || pass !== conf) { ce.style.display='block'; ok=false; } else ce.style.display='none';
+if (ok) {
+  window.location.href = 'public/index.html';
+}  });
+</script>
+</body>
+</html>

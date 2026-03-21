@@ -1,0 +1,22 @@
+{
+  "name": "phishing-shield",
+  "version": "1.0.0",
+  "description": "Vernacular Phishing Detection AI",
+  "main": "backend/server.js",
+  "scripts": {
+    "start": "node backend/server.js",
+    "dev": "nodemon backend/server.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": ["phishing", "scam", "detection", "grok", "ai"],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "cors": "^2.8.6",
+    "dotenv": "^17.3.1",
+    "express": "^5.2.1",
+    "multer": "^2.1.1"
+  }
+}
+
