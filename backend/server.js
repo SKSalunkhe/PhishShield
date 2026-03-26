@@ -5,14 +5,111 @@ const cors = require('cors');
 const multer = require('multer');
 const path = require('path');
 
+const { createClient } = require('@supabase/supabase-js');
 const app = express();
 const PORT = process.env.PORT || 3000;
 const upload = multer({ storage: multer.memoryStorage() });
+
+// ─────────────────────────────────────────────
+// DATABASE SETUP (SUPABASE)
+// ─────────────────────────────────────────────
+const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY);
+console.log('✅ Supabase integrated (backend)');
 
 app.use(cors());
 app.use(express.json({ limit: '10mb' }));
 app.use(express.static(path.join(__dirname, '../public')));
 
+// ─────────────────────────────────────────────
+// HISTORY API
+// ─────────────────────────────────────────────
+app.get('/api/history', async (req, res) => {
+  try {
+    const { data, error } = await supabase
+      .from('scans') // Using a general 'scans' table
+      .select('*')
+      .order('timestamp', { ascending: false })
+      .limit(50);
+
+    if (error) throw error;
+    res.json({ success: true, history: data });
+  } catch (err) {
+    console.error('Fetch history error:', err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.post('/api/history/clear', async (req, res) => {
+  try {
+    const { error } = await supabase
+      .from('scans')
+      .delete()
+      .neq('id', 0); // Delete all rows
+
+    if (error) throw error;
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+async function saveScan(record) {
+  try {
+    const { type, content, risk_level, risk_score, language, summary, tactics } = record;
+    const { error } = await supabase
+      .from('scans')
+      .insert({
+        type, 
+        content: content.slice(0, 500), 
+        risk_level, 
+        risk_score, 
+        language, 
+        summary, 
+        tactics: JSON.stringify(tactics)
+      });
+
+    if (error) throw error;
+    console.log(`📁 Record saved to Supabase [${type}]`);
+  } catch (err) {
+    console.error('Supabase save error:', err.message);
+  }
+}
+
+// ─────────────────────────────────────────────
+// URL FRAUD INTELLIGENCE (CRAZY IDEA HELPER)
+// ─────────────────────────────────────────────
+const FAMOUS_BRANDS = [
+  { name: 'SBI', official: 'onlinesbi.sbi', keywords: ['sbi', 'onlinesbi', 'statebank'] },
+  { name: 'HDFC', official: 'hdfcbank.com', keywords: ['hdfc', 'hdfcbk'] },
+  { name: 'Amazon', official: 'amazon.in', keywords: ['amazon', 'amzn'] },
+  { name: 'KBC', official: 'sonyliv.com', keywords: ['kbc', 'lottery'] }
+];
+
+function analyzeUrlFraud(text) {
+  const urlRegex = /(https?:\/\/[^\s]+)/g;
+  const urls = text.match(urlRegex) || [];
+  const linkIntel = [];
+
+  for (const url of urls) {
+    try {
+      const hostname = new URL(url).hostname.toLowerCase();
+      const matchedBrand = FAMOUS_BRANDS.find(b =>
+        b.keywords.some(k => hostname.includes(k)) && !hostname.endsWith(b.official)
+      );
+
+      if (matchedBrand) {
+        linkIntel.push({
+          url,
+          brandSpoof: matchedBrand.name,
+          officialUrl: matchedBrand.official,
+          risk: 'CRITICAL',
+          reason: `IMPERSONATION: This link mimics ${matchedBrand.name} but points to a suspicious server.`
+        });
+      }
+    } catch (e) { /* invalid url */ }
+  }
+  return linkIntel;
+}
 // ─────────────────────────────────────────────
 // HELPERS
 // ─────────────────────────────────────────────
@@ -182,71 +279,78 @@ app.post('/api/analyze/text', async (req, res) => {
 
     const key = getApiKey();
 
-    // Hard pre-check
-    const hardResult = hardRiskCheck(text);
-    if (hardResult) {
-      console.log('🛡️ Hard check → HIGH_RISK');
-      return res.json({ success: true, result: hardResult });
+    // 1. Hard pre-check
+    let result = hardRiskCheck(text);
+    
+    // 2. Suspicious pre-check
+    if (!result) {
+      result = suspiciousCheck(text);
     }
 
-    // Suspicious pre-check
-    const suspResult = suspiciousCheck(text);
-    if (suspResult) {
-      console.log('⚠️ Suspicious check → SUSPICIOUS');
-      return res.json({ success: true, result: suspResult });
+    // 3. Groq AI Analysis (if not caught by pre-checks)
+    if (!result) {
+      console.log('🤖 Calling Groq...');
+      const groqRes = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${key}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          model: 'llama-3.3-70b-versatile',
+          temperature: 0.05,
+          max_tokens: 500,
+          messages: [
+            { role: 'system', content: SYSTEM_PROMPT },
+            { role: 'user', content: `Language hint: ${language}\nMessage: "${text.trim()}"` }
+          ]
+        })
+      });
+
+      if (!groqRes.ok) {
+        const errBody = await groqRes.text();
+        console.error('❌ Groq error:', groqRes.status, errBody);
+        return res.status(500).json({ error: 'Groq API request failed', detail: errBody });
+      }
+
+      const groqData = await groqRes.json();
+      const rawContent = groqData.choices?.[0]?.message?.content;
+      if (!rawContent) return res.status(500).json({ error: 'Empty Groq response' });
+
+      try {
+        result = extractJSON(rawContent);
+        result.risk_level = normalizeRiskLevel(result.risk_level);
+        result.scam_probability = Math.max(0, Math.min(100, Number(result.scam_probability) || 0));
+        result.riskScore = result.scam_probability;
+      } catch (e) {
+        return res.status(500).json({ error: 'JSON parse failed', raw: rawContent });
+      }
     }
 
-    // Call Groq
-    console.log('🤖 Calling Groq...');
-    const groqRes = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-      method: 'POST',
-      headers: { 'Authorization': `Bearer ${key}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        model: 'llama-3.3-70b-versatile',
-        temperature: 0.05,
-        max_tokens: 500,
-        messages: [
-          { role: 'system', content: SYSTEM_PROMPT },
-          { role: 'user', content: `Language hint: ${language}\nMessage: "${text.trim()}"` }
-        ]
-      })
+    // 4. URL Fraud Intelligence (Crazy Idea - overrides or supplements)
+    const urlIntel = analyzeUrlFraud(text);
+    if (urlIntel.length > 0) {
+      result.risk_level = 'HIGH_RISK';
+      result.riskScore = 98;
+      result.reasons = result.reasons || [];
+      result.reasons.unshift(...urlIntel.map(i => i.reason));
+      result.suspiciousLinks = urlIntel.map(i => i.url);
+    }
+
+    // Normalize final fields
+    result.riskLevel = result.risk_level || result.riskLevel || 'SAFE';
+    result.riskScore = result.riskScore || result.scam_probability || 0;
+    result.reasons = Array.isArray(result.reasons) ? result.reasons : [];
+
+    // 5. SAVE TO DB
+    saveScan({
+      type: 'TEXT',
+      content: text.slice(0, 200),
+      risk_level: result.riskLevel,
+      risk_score: result.riskScore,
+      language: result.language || 'Auto',
+      summary: result.summary || 'Scan complete',
+      tactics: result.tactics || {}
     });
 
-    console.log('📡 Groq status:', groqRes.status);
-
-    if (!groqRes.ok) {
-      const errBody = await groqRes.text();
-      console.error('❌ Groq error:', groqRes.status, errBody);
-      return res.status(500).json({ error: 'Groq API request failed', detail: errBody });
-    }
-
-    const groqData = await groqRes.json();
-    const rawContent = groqData.choices?.[0]?.message?.content;
-    console.log('✅ Groq reply:', rawContent?.slice(0, 100));
-
-    if (!rawContent) return res.status(500).json({ error: 'Empty Groq response' });
-
-    let result;
-    try {
-      result = extractJSON(rawContent);
-    } catch (e) {
-      console.error('❌ JSON parse error:', rawContent?.slice(0, 200));
-      return res.status(500).json({ error: 'JSON parse failed', raw: rawContent });
-    }
-
-    result.risk_level          = normalizeRiskLevel(result.risk_level);
-    result.scam_probability    = Math.max(0, Math.min(100, Number(result.scam_probability) || 0));
-    result.threats             = Number(result.threats) || 0;
-    result.links               = Number(result.links) || 0;
-    result.tactics             = Number(result.tactics) || 0;
-    result.language            = result.language || 'Unknown';
-    result.reasons             = Array.isArray(result.reasons) ? result.reasons : [];
-    result.highlighted_phrases = Array.isArray(result.highlighted_phrases) ? result.highlighted_phrases : [];
-    result.summary             = result.summary || '';
-    result.riskLevel           = result.risk_level;
-    result.riskScore           = result.scam_probability;
-
-    console.log(`✅ Done | Risk: ${result.risk_level} | Score: ${result.scam_probability}`);
+    console.log(`✅ Done | Risk: ${result.riskLevel} | Score: ${result.riskScore}`);
     return res.json({ success: true, result });
 
   } catch (err) {
@@ -281,15 +385,26 @@ app.post('/api/analyze/audio', upload.array('files', 5), async (req, res) => {
                            filename.includes('loan') ? 'Congratulations! 5 lakh loan approved. Bank details bhejiye.' :
                            'Normal call recording';
 
-    res.json({
-      success: true, result: {
-        overallRiskLevel: riskLevel, overallRiskScore: riskScore,
-        summary: `Audio analyzed - ${riskLevel.toLowerCase()} detected`,
-        files: [{ filename: file.originalname, transcript: mockTranscript, riskLevel, riskScore, findings, highlightedSegments: [], suspicious_phrases: findings.map(f => f.text) }],
-        manipulationTactics: riskLevel === 'HIGH_RISK' ? { Urgency: 90, Authority: 85 } : { Greed: 70 },
-        recommendation: riskLevel === 'HIGH_RISK' ? 'BLOCK & REPORT' : riskLevel === 'SUSPICIOUS' ? 'Verify before responding' : 'Safe'
-      }
+    const resData = {
+      overallRiskLevel: riskLevel, overallRiskScore: riskScore,
+      summary: `Audio analyzed - ${riskLevel.toLowerCase()} detected`,
+      files: [{ filename: file.originalname, transcript: mockTranscript, riskLevel, riskScore, findings, highlightedSegments: [], suspicious_phrases: findings.map(f => f.text) }],
+      manipulationTactics: riskLevel === 'HIGH_RISK' ? { Urgency: 90, Authority: 85 } : { Greed: 70 },
+      recommendation: riskLevel === 'HIGH_RISK' ? 'BLOCK & REPORT' : riskLevel === 'SUSPICIOUS' ? 'Verify before responding' : 'Safe'
+    };
+
+    // SAVE TO DB
+    saveScan({
+      type: 'AUDIO',
+      content: file.originalname,
+      risk_level: riskLevel,
+      risk_score: riskScore,
+      language: 'Auto',
+      summary: resData.summary,
+      tactics: resData.manipulationTactics
     });
+
+    res.json({ success: true, result: resData });
   } catch (err) {
     console.error('Audio error:', err);
     res.status(500).json({ error: err.message });

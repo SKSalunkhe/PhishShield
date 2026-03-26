@@ -286,12 +286,17 @@
             animation: fi 0.25s ease both
         }
 
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(255, 63, 87, 0.4); }
+            70% { box-shadow: 0 0 0 10px rgba(255, 63, 87, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(255, 63, 87, 0); }
+        }
+        
         @keyframes fi {
             from {
                 opacity: 0;
                 transform: translateY(8px)
             }
-
             to {
                 opacity: 1;
                 transform: translateY(0)
@@ -2168,15 +2173,10 @@ function closeProfile() {
 function recordScan(level, score, lang, summary, tactics) {
     const scan = { level, score, lang, summary, tactics, time: new Date() };
     history.push(scan);
-    localStorage.setItem('ps_history', JSON.stringify(history));
+    // localStorage.setItem('ps_history', JSON.stringify(history)); // MIGRATED TO DB
     updateDash();
 
-    // Clean summary — remove any prefix like "HIGH RISK:", "SUSPICIOUS:" etc
-    const cleanSummary = summary
-        .replace(/^HIGH RISK:\s*/i, '')
-        .replace(/^SUSPICIOUS:\s*/i, '')
-        .replace(/^SAFE:\s*/i, '')
-        .trim();
+    const cleanSummary = (summary || 'Scan result').replace(/^(HIGH RISK|SUSPICIOUS|SAFE):\s*/i, '').trim();
 
     if (level === 'HIGH_RISK') {
         showToast('high', '🚨 HIGH RISK DETECTED', cleanSummary.substring(0, 80));
@@ -2761,7 +2761,17 @@ try {
             if (findings.length) html += `<div style="font-family:var(--fd);font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--text3);margin-bottom:7px">Findings (${findings.length})</div>
     <div class="flist">${findings.map((f, i) => `<div class="fitem" style="animation-delay:${i * 0.05}s"><div class="fdot ${dc(f.severity)}"></div><div><div style="font-size:13px;line-height:1.5">${f.text}</div><span class="ftag ${dc(f.severity)}">${f.type || ''}</span></div></div>`).join('')}</div>`;
 
-            html += `<div style="font-family:var(--fd);font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--text3);margin-bottom:7px">Highlighted message</div>
+            // CRAZY IDEA: Brand Security Shield
+            const impersonation = findings.filter(f => f.text.includes('IMPERSONATION:'));
+            if (impersonation.length) {
+              html += `<div style="margin-top:12px;padding:12px;background:rgba(255,63,87,0.1);border:1px solid var(--red);border-radius:10px;animation:pulse 2s infinite">
+                <div style="font-family:var(--fd);font-size:11px;font-weight:800;color:var(--red);text-transform:uppercase;margin-bottom:4px">⚠️ Visual Brand Security Alert</div>
+                <div style="font-size:12px;color:var(--text)">This message is spoofing a real brand. The link provided does NOT match the official domain.</div>
+                <div style="margin-top:8px;font-size:11px;color:var(--text2)">Official Domain: <span style="color:var(--accent);font-weight:700">${p.suspiciousLinks?.[0]?.includes('sbi') ? 'onlinesbi.sbi' : 'official-bank.com'}</span></div>
+              </div>`;
+            }
+
+            html += `<div style="font-family:var(--fd);font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--text3);margin-top:14px;margin-bottom:7px">Highlighted message</div>
     <div class="hmsg">${hl(original, p.highlightedSegments)}</div>`;
 
             if (links.length) html += `<div style="font-family:var(--fd);font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--text3);margin-bottom:7px">Suspicious links</div>
@@ -2860,17 +2870,21 @@ try {
             }
         }
         
-        function clearAllData() {
-            if (confirm('Clear all scan history and alerts? This cannot be undone.')) {
-                localStorage.removeItem('ps_history');
-                localStorage.removeItem('ps_alerts');
-                history = [];
-                alerts = [];
-                document.getElementById('aBadge').style.display = 'none';
-                document.getElementById('aBadge').textContent = '0';
-                updateDash();
-                renderAlertLog();
-                showToast('info', 'Data Cleared', 'Scan history and alerts reset');
+        async function clearAllData() {
+            if (confirm('Clear ALL database records and local alerts? This cannot be undone.')) {
+                try {
+                  await fetch('/api/history/clear', { method: 'POST' });
+                  localStorage.removeItem('ps_alerts');
+                  history = [];
+                  alerts = [];
+                  document.getElementById('aBadge').style.display = 'none';
+                  document.getElementById('aBadge').textContent = '0';
+                  updateDash();
+                  renderAlertLog();
+                  showToast('info', 'Database Cleared', 'All records have been reset');
+                } catch(e) {
+                  showToast('high', 'Error', 'Failed to clear database');
+                }
             }
         }
         
@@ -2890,7 +2904,25 @@ try {
 
         /* INIT */
 async function loadSavedData() {
-  history = JSON.parse(localStorage.getItem('ps_history') || '[]');
+  console.log('📦 Loading history from database...');
+  try {
+    const res = await fetch('/api/history');
+    const d = await res.json();
+    if (d.success && d.history) {
+      history = d.history.map(s => ({
+        level: s.risk_level,
+        score: s.risk_score,
+        lang: s.language,
+        summary: s.summary,
+        tactics: JSON.parse(s.tactics || '{}'),
+        time: s.timestamp
+      }));
+    }
+  } catch(e) {
+    console.error('DB Load failed:', e);
+    history = JSON.parse(localStorage.getItem('ps_history') || '[]');
+  }
+  
   alerts  = JSON.parse(localStorage.getItem('ps_alerts')  || '[]');
   if (history.length > 50) history = history.slice(-50);
   if (alerts.length  > 50) alerts  = alerts.slice(-50);
