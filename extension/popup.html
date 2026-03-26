@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        :root {
+            --bg: #07090c;
+            --bg2: #0e1117;
+            --accent: #00e5b8;
+            --text: #e8ecf2;
+            --text2: #7a8fa8;
+            --red: #ff3f57;
+            --border: rgba(255, 255, 255, 0.08);
+        }
+        body {
+            width: 320px;
+            margin: 0;
+            padding: 16px;
+            background: var(--bg);
+            color: var(--text);
+            font-family: 'Segoe UI', system-ui, sans-serif;
+        }
+        .header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 16px;
+        }
+        .logo-icon {
+            width: 24px;
+            height: 24px;
+            background: var(--accent);
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #000;
+            font-weight: 800;
+            font-size: 12px;
+        }
+        .title { font-weight: 700; font-size: 16px; }
+        .title span { color: var(--accent); }
+        
+        .scan-card {
+            background: var(--bg2);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 14px;
+            margin-bottom: 12px;
+        }
+        .label {
+            font-size: 11px;
+            color: var(--text2);
+            text-transform: uppercase;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            margin-bottom: 8px;
+            display: block;
+        }
+        .url-box {
+            font-size: 12px;
+            word-break: break-all;
+            padding: 8px;
+            background: rgba(255,255,255,0.03);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            margin-bottom: 10px;
+        }
+        button {
+            width: 100%;
+            padding: 10px;
+            background: var(--accent);
+            color: #000;
+            border: none;
+            border-radius: 8px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: opacity 0.2s;
+        }
+        button:disabled { opacity: 0.5; cursor: not-allowed; }
+        
+        #result {
+            margin-top: 12px;
+            padding-top: 12px;
+            border-top: 1px solid var(--border);
+            display: none;
+        }
+        .badge {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 10px;
+            font-weight: 800;
+            text-transform: uppercase;
+            margin-bottom: 8px;
+        }
+        .high { background: rgba(255,63,87,0.15); color: var(--red); }
+        .safe { background: rgba(0,229,184,0.15); color: var(--accent); }
+        .summary { font-size: 13px; line-height: 1.5; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="logo-icon">P</div>
+        <div class="title">PhishShield <span>AI</span></div>
+    </div>
+    
+    <div class="scan-card">
+        <span class="label">Current Webpage</span>
+        <div id="currentUrl" class="url-box">Detecting URL...</div>
+        <button id="scanBtn">Scan Website →</button>
+    </div>
+
+    <div class="scan-card">
+        <span class="label">Manual Analysis</span>
+        <textarea id="manualTxt" style="width:100%; height:60px; background:transparent; border:1px solid var(--border); border-radius:6px; color:#fff; padding:8px; resize:none; font-family:inherit; font-size:12px; margin-bottom:10px" placeholder="Paste SMS or Link..."></textarea>
+        <button id="textBtn">Analyze Text →</button>
+    </div>
+
+    <div id="result">
+        <div id="resBadge" class="badge">Safe</div>
+        <div id="resTxt" class="summary">No threats detected.</div>
+    </div>
+
+    <script src="popup.js"></script>
+</body>
+</html>
