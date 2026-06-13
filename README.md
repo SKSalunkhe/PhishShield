@@ -399,18 +399,7 @@ Delete all scan history records from the database.
 
 ---
 
-## 👥 Team
 
-Built with ❤️ for a Hackathon focused on Cyber-Secure India.
-
-| Name | Role | Contribution |
-|------|------|--------------|
-| **Sushant** | Full Stack Developer | Core architecture, backend APIs, full-stack integration |
-| **Akansha** | Full Stack Developer | Dashboard UI, responsive design, user experience |
-| **Pranjali** | Frontend Developer | AI integration, NLP processing, keyword detection |
-| **Pratikk** | UI/UX Designer | Dark theme design, component styling, visual consistency |
-
----
 
 ## 📄 License
 
